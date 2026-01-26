@@ -1,0 +1,15 @@
+{
+  "compilerOptions": {
+    "target": "ES2020",
+    "module": "commonjs",
+    "rootDir": "./",             // נקודת השורש היא Backend
+    "outDir": "./dist",          // לאן הקוד המקומפל ילך
+    "esModuleInterop": true,
+    "strict": true,
+    "experimentalDecorators": true, 
+    "emitDecoratorMetadata": true,
+    "skipLibCheck": true
+  },
+  "include": ["**/*.ts"],        // לכלול את כל קבצי ה-TS בפרויקט
+  "exclude": ["node_modules"]
+}
