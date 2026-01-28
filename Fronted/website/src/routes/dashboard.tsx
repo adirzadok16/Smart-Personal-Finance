@@ -15,9 +15,6 @@ export default function Dashboard() {
             <Transactionlist />
             <IncomeExpenseChart />
             <ExpenseChart />
-
-
-
         </div>
     )
 }

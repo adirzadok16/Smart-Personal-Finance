@@ -4,7 +4,6 @@ import { Client } from 'pg';
 // Map to store DataSource instances for each service
 const servicesDatabases = new Map<string, DataSource>();
 
-
 /**
  * createAndInitServiceDatabase
  * @param config - Object containing:
@@ -14,7 +13,7 @@ const servicesDatabases = new Map<string, DataSource>();
  * 
  * What it does:
  *  - Checks if a DataSource already exists in the map
- *  - Calls ensureDatabaseExists to make sure the DB exists
+ *  - Calls checkIfDatabaseExists to ensure the DB exists
  *  - Creates a new TypeORM DataSource
  *  - Stores it in the servicesDatabases map
  * 
@@ -26,21 +25,21 @@ export async function createAndInitServiceDatabase(config: {
   entities: any[];
 }) {
   if (servicesDatabases.has(config.name)) {
+    console.log(`✅ Database for service "${config.name}" already initialized`);
     return servicesDatabases.get(config.name)!;
   }
 
-  // Ensure the database exists
+  console.log(`🔍 Ensuring database for service "${config.name}" exists...`);
   await checkIfDatabaseExists(config.databaseUrl);
 
-  // Create new TypeORM DataSource
+  console.log(`⚡ Initializing TypeORM DataSource for service "${config.name}"...`);
   const db = new DataSource({
     type: 'postgres',
     url: config.databaseUrl,
     entities: config.entities,
-    synchronize: true,
+    synchronize: true, // Auto-sync schema (use with caution in production)
   });
 
-  // Store in map
   servicesDatabases.set(config.name, db);
   return db;
 }
@@ -55,11 +54,11 @@ export async function createAndInitServiceDatabase(config: {
  * Returns: Promise<void>
  */
 export async function closeAllServiceDatabases() {
-  console.log('Closing all PostgreSQL connections...');
+  console.log('🔌 Closing all PostgreSQL connections...');
   for (const [name, db] of servicesDatabases.entries()) {
     if (db.isInitialized) {
       await db.destroy();
-      console.log(`Database "${name}" connection closed`);
+      console.log(`✅ Database "${name}" connection closed`);
     }
   }
 }
@@ -77,14 +76,13 @@ export async function closeAllServiceDatabases() {
 export function getServiceDatabase(name: string): DataSource {
   const db = servicesDatabases.get(name);
   if (!db) {
-    throw new Error(`Service Database "${name}" not initialized`);
+    throw new Error(`❌ Service Database "${name}" not initialized`);
   }
   return db;
 }
 
-
 /**
- * ensureDatabaseExists
+ * checkIfDatabaseExists
  * @param databaseUrl - the PostgreSQL connection URL, e.g., "postgresql://user:pass@localhost:5432/dbname"
  * 
  * What it does:
@@ -97,41 +95,37 @@ export function getServiceDatabase(name: string): DataSource {
  * Returns: Promise<void>
  */
 async function checkIfDatabaseExists(databaseUrl: string) {
-  // Parse the URL to extract database name
   const parsedUrl = new URL(databaseUrl);
   const dbName = parsedUrl.pathname.slice(1); // remove leading '/'
+  if (!dbName) throw new Error('❌ Cannot parse database name from URL');
 
-  if (!dbName) throw new Error('Cannot parse database name from URL');
-
-  // Connect to default 'postgres' database to check existence
   const defaultDbUrl = new URL(databaseUrl);
   defaultDbUrl.pathname = '/postgres';
 
-  console.log(`Checking if database "${dbName}" exists...`);
+  console.log(`🔍 Checking if database "${dbName}" exists...`);
   const client = new Client({ connectionString: defaultDbUrl.toString() });
 
   try {
     await client.connect();
-    console.log('Connected to postgres for check');
+    console.log('✅ Connected to default "postgres" database');
 
-    // Check if database exists
     const res = await client.query(
       'SELECT 1 FROM pg_database WHERE datname = $1',
       [dbName]
     );
 
     if (res.rowCount === 0) {
-      // Create database if it doesn't exist
-      console.log(`Database "${dbName}" not found. Creating...`);
+      console.log(`⚡ Database "${dbName}" not found. Creating...`);
       await client.query(`CREATE DATABASE "${dbName}"`);
-      console.log(`Database "${dbName}" created successfully`);
+      console.log(`✅ Database "${dbName}" created successfully`);
     } else {
-      console.log(`Database "${dbName}" already exists`);
+      console.log(`✅ Database "${dbName}" already exists`);
     }
   } catch (err) {
-    console.error('Error during ensureDatabaseExists:', err);
+    console.error('❌ Error during checkIfDatabaseExists:', err);
     throw err;
   } finally {
     await client.end();
+    console.log(`🔌 Closed temporary connection for database check`);
   }
 }

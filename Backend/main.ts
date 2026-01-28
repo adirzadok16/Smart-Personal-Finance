@@ -5,58 +5,82 @@ import { closeAllServiceDatabases } from './app/db/database';
 import RedisService from './app/utilities/redis_service';
 import { startTransactionServiceServer } from './app/transaction-service/transaction_server';
 import { RabbitMQService } from './app/utilities/rabbitmq';
+import { startDashboardServiceServer } from './app/dashboard-service/dashboard_server';
 
+/**
+ * Main function to start all services
+ */
 async function run() {
     try {
-
+        console.log('🔗 Connecting to Services...');
         await RabbitMQService.connect();
         await RabbitMQService.assertExchange('transactions');
-        await RedisService.connectRedis();
+        await RedisService.connect();
 
-
-        console.log('Starting services...');
+        console.log('🚀 Starting all service servers...');
         const gateway = await startGateway();
+        console.log('✅ API Gateway started');
+
         const authServer = await startAuthServiceServer();
+        console.log('✅ Auth Service started');
+
         const transactionServer = await startTransactionServiceServer();
+        console.log('✅ Transaction Service started');
 
-        console.log('🚀 All services are running');
+        const dashboardServer = await startDashboardServiceServer();
+        console.log('✅ Dashboard Service started');
 
+        console.log('🎉 All services are running successfully!');
+
+        /**
+         * Graceful shutdown procedure
+         * - Stops servers
+         * - Closes DB connections
+         * - Shuts down Redis
+         */
         const gracefulShutdown = async (signal: string) => {
-            console.log(`\nReceived ${signal}. Starting graceful shutdown...`);
+            console.log(`\n⚠️ Received ${signal}. Starting graceful shutdown...`);
 
-            // 1. Stop servers (stop accepting new requests)
-            console.log('Stopping servers...');
+            // ------------------ Stop Servers ------------------
+            console.log('🛑 Stopping servers...');
             if (gateway) {
                 await gateway.close();
-                console.log('Gateway stopped');
+                console.log('✅ Gateway stopped');
             }
             if (authServer) {
                 await authServer.close();
-                console.log('Auth Service stopped');
+                console.log('✅ Auth Service stopped');
             }
             if (transactionServer) {
                 await transactionServer.close();
-                console.log('Transaction Service stopped');
+                console.log('✅ Transaction Service stopped');
+            }
+            if (dashboardServer) {
+                await dashboardServer.close();
+                console.log('✅ Dashboard Service stopped');
             }
 
-            // 2. Clear connections
+            // ------------------ Close Connections ------------------
+            console.log('🔌 Closing database connections...');
             await closeAllServiceDatabases();
+            console.log('✅ Databases disconnected');
+
+            console.log('🔌 Shutting down Redis...');
             await RedisService.shutdown();
 
-            console.log('Graceful Redis shutdown complete. Exiting.');
+            console.log('🟢 Graceful shutdown complete. Exiting process.');
             process.exit(0);
         };
 
-        // Register signals
+        // ------------------ Register OS Signals ------------------
         process.on('SIGINT', () => gracefulShutdown('SIGINT'));
         process.on('SIGTERM', () => gracefulShutdown('SIGTERM'));
 
     } catch (err) {
-        console.error('Fatal error during startup:', err);
+        console.error('💥 Fatal error during startup:', err);
         process.exit(1);
     }
 }
 
+// ------------------ Run the application ------------------
 run();
-
-

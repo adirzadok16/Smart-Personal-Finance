@@ -2,8 +2,8 @@ import express from 'express';
 import dotenv from 'dotenv';
 import { createAndInitServiceDatabase } from '../db/database';
 import { dashboardRoutes } from './dashboard_routes';
-import { DashboardSummary_Table } from './dashboard_schemas';
-import { startDashboardSubscriber } from './dashboard_consumer';
+import { startDashboardSubscriber } from './dashboard-consumer/dashboard_consumer';
+import { DashboardCategorySummary, DashboardMonthlySummary, DashboardRecentTransaction } from './dashboard_schemas';
 
 dotenv.config();
 
@@ -22,10 +22,10 @@ export const startDashboardServiceServer = async () => {
 
     // ---------------- DB ----------------
     console.log('📊 Initializing Dashboard DB...');
-    const dashboardDataSource = await createAndInitServiceDatabase({
+     const dashboardDataSource = await createAndInitServiceDatabase({
       name: 'dashboard',
       databaseUrl: process.env.DASHBOARD_DATABASE_URL!,
-      entities: [DashboardSummary_Table],
+      entities: [DashboardMonthlySummary, DashboardCategorySummary, DashboardRecentTransaction],
     });
 
     await dashboardDataSource.initialize();

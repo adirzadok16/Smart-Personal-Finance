@@ -1,22 +1,66 @@
-import { Entity, PrimaryColumn, Column } from 'typeorm';
+import { Entity,Column, PrimaryColumn } from 'typeorm';
 
-@Entity('dashboard_summary')
-export class DashboardSummary_Table {
+@Entity()
+export class DashboardMonthlySummary {
   @PrimaryColumn()
   userId!: string;
 
-  @Column({ default: 0 })
+  @PrimaryColumn()
+  month!: number; // 1-12
+
+  @PrimaryColumn()
+  year!: number;
+
+  @Column('decimal', { precision: 12, scale: 2, default: 0 })
   totalIncome!: number;
 
-  @Column({ default: 0 })
+  @Column('decimal', { precision: 12, scale: 2, default: 0 })
   totalExpense!: number;
 
-  @Column({ default: 0 })
+  @Column('decimal', { precision: 12, scale: 2, default: 0 })
   balance!: number;
+}
 
-  @Column('json', { default: [] })
-  categories!: {
-    category: string;
-    amount: number;
-  }[];
+
+@Entity()
+export class DashboardCategorySummary {
+  @PrimaryColumn()
+  userId!: string;
+
+  @PrimaryColumn()
+  month!: number;
+
+  @PrimaryColumn()
+  year!: number;
+
+  @PrimaryColumn()
+  category!: string;
+
+  @Column('decimal', { precision: 12, scale: 2 })
+  amount!: number;
+}
+
+
+@Entity()
+export class DashboardRecentTransaction {
+  @PrimaryColumn({ type: 'uuid' })
+  transactionId!: string;
+
+  @Column({ type: 'varchar' })
+  userId!: string;
+
+  @Column({ type: 'varchar' })
+  description!: string;
+
+   @Column({ type: 'varchar' })
+  category!: string;
+
+  @Column({ type: 'varchar' })
+  type!: string;
+
+  @Column('decimal', { precision: 12, scale: 2 })
+  amount!: number;
+
+  @Column({ type: 'varchar' })
+  date!: string;
 }

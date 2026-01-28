@@ -7,22 +7,32 @@ class RedisService {
     private static instance: RedisClientType<any, any> | null = null;
     private static connecting: Promise<RedisClientType<any, any>> | null = null;
 
+    // Private constructor to prevent instantiation
     private constructor() { }
 
-    // ------------------ connect ------------------
-    public static async connectRedis() {
-        if (this.instance?.isOpen) return this.instance;
+    // ------------------ CONNECT ------------------
+    /**
+     * Connects to Redis if not already connected.
+     * Returns the Redis client instance.
+     */
+    public static async connect() {
+        if (this.instance?.isOpen) {
+            console.log('[REDIS] Already connected');
+            return this.instance;
+        }
 
         if (!this.connecting) {
+            console.log('[REDIS] Connecting to Redis...');
             this.connecting = (async () => {
                 const client: RedisClientType<any, any> = createClient({
                     url: process.env.REDIS_URL || 'redis://localhost:6379',
                 });
 
-                client.on('error', (err) => console.error('Redis Client Error', err));
+                // Handle connection errors
+                client.on('error', (err) => console.error('❌ [REDIS] Client Error:', err));
 
                 await client.connect();
-                console.log('Redis connected');
+                console.log('✅ [REDIS] Connected successfully');
 
                 RedisService.instance = client;
                 this.connecting = null;
@@ -33,57 +43,90 @@ class RedisService {
         return this.connecting;
     }
 
-    // ------------------ getClient ------------------
+    // ------------------ GET CLIENT ------------------
+    /**
+     * Returns the active Redis client.
+     * Connects automatically if not connected.
+     */
     private static async getClient(): Promise<RedisClientType<any, any>> {
         if (!RedisService.instance || !RedisService.instance.isOpen) {
-            await RedisService.connectRedis();
+            console.log('[REDIS] Client not connected, connecting...');
+            await RedisService.connect();
         }
         return RedisService.instance!;
     }
 
-    // ------------------ set ------------------
+    // ------------------ SET ------------------
+    /**
+     * Set a key-value pair in Redis.
+     * @param key - Redis key
+     * @param value - Value to store
+     * @param ttlSeconds - Optional time-to-live in seconds
+     */
     public static async set(key: string, value: string, ttlSeconds?: number) {
         const client = await RedisService.getClient();
         if (ttlSeconds) {
+            console.log(`[REDIS] Setting key: ${key} with TTL: ${ttlSeconds}s`);
             await client.setEx(key, ttlSeconds, value);
         } else {
+            console.log(`[REDIS] Setting key: ${key} without TTL`);
             await client.set(key, value);
         }
     }
 
-    // ------------------ get ------------------
+    // ------------------ GET ------------------
+    /**
+     * Get a value by key from Redis
+     * @param key - Redis key
+     * @returns Value or null if not found
+     */
     public static async get(key: string) {
         const client = await RedisService.getClient();
-        return await client.get(key);
+        const value = await client.get(key);
+        console.log(`[REDIS] Retrieved key: ${key} ->`, value);
+        return value;
     }
 
-    // ------------------ del ------------------
+    // ------------------ DEL ------------------
+    /**
+     * Delete a key from Redis
+     * @param key - Redis key
+     */
     public static async del(key: string) {
         const client = await RedisService.getClient();
+        console.log(`[REDIS] Deleting key: ${key}`);
         return await client.del(key);
     }
 
-    // ------------------ delPattern ------------------
+    // ------------------ DEL PATTERN ------------------
+    /**
+     * Delete all keys matching a pattern
+     * @param pattern - Redis key pattern (e.g., "dashboard:*")
+     */
     public static async delPattern(pattern: string) {
         const client = await RedisService.getClient();
+        console.log(`[REDIS] Deleting keys with pattern: ${pattern}`);
         const keys = await client.keys(pattern);
         if (keys.length > 0) {
+            console.log(`[REDIS] Keys to delete:`, keys);
             await client.del(keys);
+        } else {
+            console.log('[REDIS] No keys found for pattern');
         }
     }
 
-    // ------------------ shutdown ------------------
+    // ------------------ SHUTDOWN ------------------
+    /**
+     * Gracefully close Redis connection
+     */
     public static async shutdown() {
         if (RedisService.instance) {
-            console.log('Closing Redis connection...');
+            console.log('[REDIS] Closing Redis connection...');
             await RedisService.instance.quit();
             RedisService.instance = null;
-            console.log('Redis disconnected');
+            console.log('✅ [REDIS] Disconnected successfully');
         }
     }
 }
 
 export default RedisService;
-
-
-

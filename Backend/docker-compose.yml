@@ -8,6 +8,8 @@ services:
     environment:
       POSTGRES_USER: ${POSTGRES_USER}
       POSTGRES_PASSWORD: ${POSTGRES_PASSWORD}
+    env_file:
+      - .env.docker
     volumes:
       - postgres_data:/var/lib/postgresql/data
     networks:
@@ -27,6 +29,8 @@ services:
       - redis_data:/data
     networks:
       - app-network
+    env_file:
+      - .env.docker
     healthcheck:
       test: ["CMD", "redis-cli", "-a", "${REDIS_PASSWORD}", "ping"]
       interval: 10s
@@ -40,6 +44,8 @@ services:
     environment:
       RABBITMQ_DEFAULT_USER: ${RABBITMQ_USER}
       RABBITMQ_DEFAULT_PASS: ${RABBITMQ_PASSWORD}
+    env_file:
+      - .env.docker
     volumes:
       - rabbitmq_data:/var/lib/rabbitmq
     networks:
