@@ -3,6 +3,7 @@ import dotenv from 'dotenv';
 import { createAndInitServiceDatabase } from '../db/database';
 import authRoutes from './auth_routes';
 import { User_Table } from './auth_schemas';
+import cookieParser from 'cookie-parser';
 
 dotenv.config();
 
@@ -23,7 +24,7 @@ export const startAuthServiceServer = async () => {
 
 
     console.log('Initializing Auth DB...');
-    const authDataSource = await createAndInitServiceDatabase({
+     const authDataSource = await createAndInitServiceDatabase({
       name: 'auth',
       databaseUrl: process.env.AUTH_DATABASE_URL!, /* ! means that the value is not undefined it's value will be in runtime */
       entities: [User_Table],
@@ -34,7 +35,8 @@ export const startAuthServiceServer = async () => {
 
     const app = express();
     app.use(express.json());
-    app.use('/auth',authRoutes);
+    app.use(cookieParser());
+    app.use('/auth', authRoutes);
     const server = await new Promise<import('http').Server>((resolve, reject) => {
       const s = app.listen(PORT, () => {
         console.log(`🚀 Auth Service IS RUNNING at port ${PORT}`);

@@ -35,11 +35,18 @@ authRoutes.post('/register', async (req: Request, res: Response) => {
 authRoutes.post('/login', async (req: Request, res: Response) => {
   try {
     const result = await AuthService.login_user(req.body);
-    res.status(200).json({
-      message: 'Login successful',
-      accessToken: result.accessToken,
-      refreshToken: result.refreshToken
-    });
+    res
+      .cookie("accessToken",
+        result.accessToken,{
+        httpOnly: true,
+        secure: false, 
+        sameSite: "lax",
+        maxAge: 15 * 60 * 1000, 
+      })
+      .status(200)
+      .json({
+        message: 'Login successful',
+      });
   } catch (err: any) {
     console.error('Login error:', err);
     if (err.message === 'Invalid credentials') {

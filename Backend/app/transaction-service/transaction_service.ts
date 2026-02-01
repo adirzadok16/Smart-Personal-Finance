@@ -2,8 +2,8 @@ import { createTransactionDto, deleteTransactionDto, Transaction, updateTransact
 import { v4 as uuidv4 } from 'uuid';
 import { Transaction_Table } from './transaction_schemas';
 import { getServiceDatabase } from '../db/database';
-import { RabbitMQService } from '../utilities/rabbitmq';
-import { getMonthAndYear } from '../utilities/helpers';
+import RabbitMQService from '../utilities/rabbitmq';
+import { getMonthAndYear } from '../utilities/helpers'; 
 
 export class TransactionService {
 
@@ -38,7 +38,7 @@ export class TransactionService {
     const transaction: Transaction = {
       transaction_id: transactionId,
       user_id: userId,
-      description: dto.description,
+      title: dto.title,
       amount: dto.amount,
       type: dto.type,
       category: dto.category,
@@ -65,7 +65,7 @@ export class TransactionService {
       type: savedTransaction.type,
       month: month,
       year: year,
-      description: savedTransaction.description,
+      description: savedTransaction.title,
     });
     console.log(`[ADD] Event published successfully.`);
 
@@ -98,7 +98,7 @@ export class TransactionService {
     }
 
     console.log(`[UPDATE] Updating transaction fields...`);
-    transaction.description = dto.newDescription;
+    transaction.title = dto.newTitle;
     transaction.amount = dto.newAmount;
     transaction.type = dto.type;
     transaction.category = dto.newCategory;
@@ -122,14 +122,14 @@ export class TransactionService {
    *  - Publishes a transaction.deleted event to RabbitMQ
    */
   static async delete_transaction(userId: string, dto: deleteTransactionDto) {
-    console.log(`[DELETE] Starting transaction deletion for user: ${userId}, description: ${dto.description}`);
+    console.log(`[DELETE] Starting transaction deletion for user: ${userId}, description: ${dto.title}`);
 
     const db = getServiceDatabase('transaction');
     const transactionRepo = db.getRepository(Transaction_Table);
 
     console.log(`[DELETE] Fetching transaction from DB...`);
     const transaction = await transactionRepo.findOne({
-      where: { description: dto.description, user_id: userId },
+      where: { title: dto.title, user_id: userId },
     });
     if (!transaction) {
       console.log(`[DELETE] Transaction not found`);
@@ -151,7 +151,7 @@ export class TransactionService {
       type: dto.type,
       month: month,
       year: year,
-      description: dto.description,
+      description: dto.title,
     });
     console.log(`[DELETE] Event published successfully.`);
 

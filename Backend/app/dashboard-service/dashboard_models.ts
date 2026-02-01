@@ -7,7 +7,7 @@ export interface TransactionCreatedEvent {
   month: number;
   year: number;
   date: string;
-  description: string;
+  title: string;
 }
 
 export interface TransactionUpdatedEvent {
@@ -21,8 +21,8 @@ export interface TransactionUpdatedEvent {
   date: string;
   month: number;
   year: number;
-  oldDescription: string;
-  newDescription: string;
+  oldTitle: string;
+  newTitle: string;
 }
 
 export interface TransactionDeletedEvent {
@@ -34,10 +34,44 @@ export interface TransactionDeletedEvent {
   date: string;
   month: number;
   year: number;
-  description: string;
+  title: string;
 }
 
 export enum TransactionType {
   INCOME = 'income',
   EXPENSE = 'expense',
+}
+
+
+export interface MonthlySummary {
+  userId: string;
+  month: number;
+  year: number;
+  totalIncome: number;
+  totalExpense: number;
+  balance: number;
+}
+
+export interface CategorySummary {
+  userId: string;
+  month: number;
+  year: number;
+  category: string;
+  amount: number;
+}
+
+export interface RecentTransaction {
+  transactionId: string;
+  userId: string;
+  title: string;
+  category: string;
+  type: string;
+  amount: number;
+  date: string;
+}
+
+export interface DashboardCache {
+  monthlySummary: MonthlySummary[];
+  categorySummary: CategorySummary[];
+  recentTransactions: RecentTransaction[];
 }

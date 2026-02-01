@@ -1,4 +1,4 @@
-import { RabbitMQService } from '../../utilities/rabbitmq';
+import RabbitMQService from '../../utilities/rabbitmq';
 import { processTransaction } from './dashboard-consumer-controller';
 
 

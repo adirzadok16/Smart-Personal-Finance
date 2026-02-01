@@ -32,16 +32,16 @@ export default function ExpenseChart() {
         <motion.div
             initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}
-            className="flex flex-col bg-white border border-gray-100 rounded-2xl shadow-sm p-6 mt-8 w-full max-w-6xl mx-4"
+            className="flex flex-col bg-gray-800 border border-gray-700 rounded-2xl shadow-sm p-6 mt-8 w-full max-w-6xl mx-4"
         >
             <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4 mb-8">
-                <h1 className="text-xl font-bold text-gray-900">Expense Distribution</h1>
+                <h1 className="text-xl font-bold text-white">Expense Distribution</h1>
 
                 <div className="flex flex-wrap items-center gap-3 w-full md:w-auto">
                     <select
                         value={month}
                         onChange={(e) => setMonth(e.target.value)}
-                        className="bg-gray-50 border border-gray-200 text-gray-900 text-sm rounded-lg focus:ring-blue-500 focus:border-blue-500 block p-2.5 transition-all outline-hidden cursor-pointer"
+                        className="bg-gray-700 border border-gray-600 text-white text-sm rounded-lg focus:ring-blue-500 focus:border-blue-500 block p-2.5 transition-all outline-hidden cursor-pointer"
                     >
                         {months.map(m => <option key={m} value={m}>{m}</option>)}
                     </select>
@@ -49,7 +49,7 @@ export default function ExpenseChart() {
                     <select
                         value={year}
                         onChange={(e) => setYear(e.target.value)}
-                        className="bg-gray-50 border border-gray-200 text-gray-900 text-sm rounded-lg focus:ring-blue-500 focus:border-blue-500 block p-2.5 transition-all outline-hidden cursor-pointer"
+                        className="bg-gray-700 border border-gray-600 text-white text-sm rounded-lg focus:ring-blue-500 focus:border-blue-500 block p-2.5 transition-all outline-hidden cursor-pointer"
                     >
                         {years.map(y => <option key={y} value={y}>{y}</option>)}
                     </select>
@@ -80,9 +80,10 @@ export default function ExpenseChart() {
                             ))}
                         </Pie>
                         <Tooltip
-                            contentStyle={{ borderRadius: '12px', border: 'none', boxShadow: '0 4px 6px -1px rgb(0 0 0 / 0.1)' }}
+                            contentStyle={{ backgroundColor: '#1f2937', borderRadius: '12px', border: '1px solid #374151', boxShadow: '0 4px 6px -1px rgb(0 0 0 / 0.1)' }}
+                            itemStyle={{ color: '#fff' }}
                         />
-                        <Legend verticalAlign="bottom" height={36} />
+                        <Legend verticalAlign="bottom" height={36} wrapperStyle={{ paddingTop: '20px', color: '#9ca3af' }} />
                     </PieChart>
                 </ResponsiveContainer>
             </div>

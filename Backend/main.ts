@@ -1,11 +1,12 @@
 import 'reflect-metadata';
 import { startGateway } from './app/app_getaway';
 import { startAuthServiceServer } from './app/auth-service/auth_server';
-import { closeAllServiceDatabases } from './app/db/database';
+import { closeAllServiceDatabases, dropAllTablesAcrossServices } from './app/db/database';
 import RedisService from './app/utilities/redis_service';
 import { startTransactionServiceServer } from './app/transaction-service/transaction_server';
-import { RabbitMQService } from './app/utilities/rabbitmq';
+import RabbitMQService from './app/utilities/rabbitmq';
 import { startDashboardServiceServer } from './app/dashboard-service/dashboard_server';
+import { seedAllDatabases } from './app/db/mockdata';
 
 /**
  * Main function to start all services
@@ -29,6 +30,12 @@ async function run() {
 
         const dashboardServer = await startDashboardServiceServer();
         console.log('✅ Dashboard Service started');
+
+
+        console.log('🌱 Seeding all databases...');
+        await seedAllDatabases();
+        console.log('🌱 All databases seeded successfully');
+
 
         console.log('🎉 All services are running successfully!');
 
@@ -67,6 +74,10 @@ async function run() {
 
             console.log('🔌 Shutting down Redis...');
             await RedisService.shutdown();
+
+            console.log('🧹 Dropping all tables across services...');
+            await dropAllTablesAcrossServices();
+            console.log('🧹 All tables dropped across services');
 
             console.log('🟢 Graceful shutdown complete. Exiting process.');
             process.exit(0);

@@ -3,6 +3,7 @@ import dotenv from 'dotenv';
 import { createAndInitServiceDatabase } from '../db/database';
 import { transactionRoutes } from './transaction_routes';
 import { Transaction_Table } from './transaction_schemas';
+import cookieParser from 'cookie-parser';
 
 dotenv.config();
 
@@ -34,6 +35,15 @@ export const startTransactionServiceServer = async () => {
 
     const app = express();
     app.use(express.json());
+    app.use(cookieParser());
+
+
+    // Logging middleware for Transaction Service
+    app.use((req, res, next) => {
+      console.log(`[TRANSACTION SERVICE Hit] ${req.method} ${req.url}`);
+      next();
+    });
+
     app.use('/transaction', transactionRoutes);
     const server = await new Promise<import('http').Server>((resolve, reject) => {
       const s = app.listen(PORT, () => {

@@ -12,13 +12,13 @@ export default function Home() {
     };
 
     const navItemClass =
-        "text-gray-700 hover:text-gray-900 font-semibold transition-all duration-300 cursor-pointer";
+        "text-gray-300 hover:text-white font-semibold transition-all duration-300 cursor-pointer";
 
     return (
         <div className="min-h-screen">
             {/* Navbar */}
             <header>
-                <nav className="fixed top-0 left-0 right-0 z-50 bg-gray-50/90 backdrop-blur shadow-sm py-4">
+                <nav className="fixed top-0 left-0 right-0 z-50 bg-gray-800/90 backdrop-blur shadow-md py-4 border-b border-gray-700">
                     <div className="flex justify-between items-center px-5">
                         {/* Logo */}
                         <div className="flex items-center gap-3">
@@ -35,7 +35,7 @@ export default function Home() {
                                 <polyline points="22 7 13.5 15.5 8.5 10.5 2 17" />
                                 <polyline points="16 7 22 7 22 13" />
                             </svg>
-                            <span className="text-black font-semibold text-xl">
+                            <span className="text-white font-semibold text-xl">
                                 Smart Finance
                             </span>
                         </div>
@@ -69,7 +69,7 @@ export default function Home() {
                             <li>
                                 <Link
                                     to="/login"
-                                    className="text-blue-600 font-semibold hover:text-blue-700 transition"
+                                    className="text-blue-400 font-semibold hover:text-blue-300 transition"
                                 >
                                     Sign in
                                 </Link>

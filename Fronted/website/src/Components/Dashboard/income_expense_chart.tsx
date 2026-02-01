@@ -15,18 +15,18 @@ export default function IncomeExpenseChart() {
         <motion.div
             initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}
-            className="flex flex-col bg-white border border-gray-100 rounded-2xl shadow-sm p-6 mt-8 w-full max-w-6xl mx-4"
+            className="flex flex-col bg-gray-800 border border-gray-700 rounded-2xl shadow-sm p-6 mt-8 w-full max-w-6xl mx-4"
         >
             <div className="flex justify-between items-center mb-8">
-                <h1 className="text-xl font-bold text-gray-900">Income vs Expenses</h1>
+                <h1 className="text-xl font-bold text-white">Income vs Expenses</h1>
                 <div className="flex items-center gap-4">
                     <div className="flex items-center gap-2">
                         <div className="w-3 h-3 rounded-full bg-green-500"></div>
-                        <span className="text-sm text-gray-500">Income</span>
+                        <span className="text-sm text-gray-400">Income</span>
                     </div>
                     <div className="flex items-center gap-2">
                         <div className="w-3 h-3 rounded-full bg-red-500"></div>
-                        <span className="text-sm text-gray-500">Expenses</span>
+                        <span className="text-sm text-gray-400">Expenses</span>
                     </div>
                 </div>
             </div>
@@ -34,28 +34,29 @@ export default function IncomeExpenseChart() {
             <div className="h-[350px] w-full">
                 <ResponsiveContainer width="100%" height="100%">
                     <LineChart data={data}>
-                        <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#f1f5f9" />
+                        <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#374151" />
                         <XAxis
                             dataKey="month"
                             axisLine={false}
                             tickLine={false}
-                            tick={{ fill: '#94a3b8', fontSize: 12 }}
+                            tick={{ fill: '#6b7280', fontSize: 12 }}
                             dy={10}
                         />
                         <YAxis
                             axisLine={false}
                             tickLine={false}
-                            tick={{ fill: '#94a3b8', fontSize: 12 }}
+                            tick={{ fill: '#6b7280', fontSize: 12 }}
                         />
                         <Tooltip
-                            contentStyle={{ borderRadius: '12px', border: 'none', boxShadow: '0 4px 6px -1px rgb(0 0 0 / 0.1)' }}
+                            contentStyle={{ backgroundColor: '#1f2937', borderRadius: '12px', border: '1px solid #374151', boxShadow: '0 4px 6px -1px rgb(0 0 0 / 0.1)' }}
+                            itemStyle={{ color: '#fff' }}
                         />
                         <Line
                             type="monotone"
                             dataKey="income"
                             stroke="#13e308ff"
                             strokeWidth={3}
-                            dot={{ r: 4, fill: '#13e308ff', strokeWidth: 2, stroke: '#fff' }}
+                            dot={{ r: 4, fill: '#13e308ff', strokeWidth: 2, stroke: '#1f2937' }}
                             activeDot={{ r: 6, strokeWidth: 0 }}
                         />
                         <Line
@@ -63,7 +64,7 @@ export default function IncomeExpenseChart() {
                             dataKey="expenses"
                             stroke="#ef4444"
                             strokeWidth={3}
-                            dot={{ r: 4, fill: '#ef4444', strokeWidth: 2, stroke: '#fff' }}
+                            dot={{ r: 4, fill: '#ef4444', strokeWidth: 2, stroke: '#1f2937' }}
                             activeDot={{ r: 6, strokeWidth: 0 }}
                         />
                     </LineChart>

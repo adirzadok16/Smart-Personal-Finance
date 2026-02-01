@@ -1,8 +1,10 @@
 import { getServiceDatabase } from "../db/database";
-import { DashboardMonthlySummary, DashboardCategorySummary, DashboardRecentTransaction } from "./dashboard_schemas";
 import RedisService from "../utilities/redis_service";
+import { DashboardMonthlySummary, DashboardCategorySummary, DashboardRecentTransaction } from "./dashboard_schemas";
+import { DashboardCache } from "./dashboard_models";
+import { MoreThan } from "typeorm";
 
-export class DashboardService {
+class DashboardService {
 
   /**
    * getDashboard
@@ -14,49 +16,67 @@ export class DashboardService {
    *  - If cache does not exist, fetches from database
    *  - Populates monthly summaries, category summaries, and recent transactions
    *  - Stores result in Redis for future requests
+   * 
+   * Returns: Promise<DashboardCache>
    */
-  static async getDashboard(userId: string) {
+  static async getDashboard(userId: string): Promise<DashboardCache> {
     console.log(`[DASHBOARD] Fetching dashboard for user: ${userId}`);
 
     try {
+      const cacheKey = `dashboard:${userId}`;
+
       // ------------------ CHECK CACHE ------------------
       console.log(`[DASHBOARD] Checking Redis cache...`);
-      const cachedDashboard = await RedisService.get(`dashboard:${userId}`);
+      const cachedDashboard = await RedisService.get(cacheKey);
       if (cachedDashboard) {
-        console.log(`[DASHBOARD] Cache hit. Returning cached dashboard for user: ${userId}`);
-        return JSON.parse(cachedDashboard);
+        console.log(`[DASHBOARD] Cache hit. Returning cached dashboard.`);
+        return JSON.parse(cachedDashboard) as DashboardCache;
       }
 
-      console.log(`[DASHBOARD] Cache miss. Fetching from database...`);
+      console.log(`[DASHBOARD] Cache miss. Fetching data from database...`);
 
-      // ------------------ DATABASE FETCH ------------------
+      // ------------------ DATABASE CONNECTION ------------------
       const db = getServiceDatabase('dashboard');
       const monthlyRepo = db.getRepository(DashboardMonthlySummary);
       const categoryRepo = db.getRepository(DashboardCategorySummary);
       const transactionRepo = db.getRepository(DashboardRecentTransaction);
 
-      console.log(`[DASHBOARD] Fetching monthly summaries, category summaries, and recent transactions from DB...`);
-      const [monthlySummaries, categorySummaries, recentTransactions] = await Promise.all([
-        monthlyRepo.find({ where: { userId } }),
-        categoryRepo.find({ where: { userId } }),
-        transactionRepo.find({ where: { userId }, order: { date: 'DESC' }, take: 10 }) // fetch latest 10 transactions
-      ]);
+      const now = new Date();
+      const currentYear = now.getFullYear();
+      const sixMonthsAgo = new Date();
+      sixMonthsAgo.setMonth(now.getMonth() - 6);
 
-      console.log(`[DASHBOARD] DB fetch completed for user: ${userId}`);
+      // ------------------ FETCH DATA ------------------
+      console.log(`[DASHBOARD] Fetching monthly summaries for current year...`);
+      const monthlySummaries = await monthlyRepo.find({
+        where: { userId, year: currentYear },
+        order: { month: 'ASC' },
+      });
+
+      console.log(`[DASHBOARD] Fetching category summaries for current year...`);
+      const categorySummaries = await categoryRepo.find({
+        where: { userId, year: currentYear },
+      });
+
+      console.log(`[DASHBOARD] Fetching recent transactions from last 6 months...`);
+      const recentTransactions = await transactionRepo.find({
+        where: { userId, date: MoreThan(sixMonthsAgo.toISOString()) },
+        order: { date: 'DESC' },
+      });
 
       // ------------------ BUILD DASHBOARD OBJECT ------------------
-      const dashboardStatistics = {
-        monthlySummaries,
-        categorySummaries,
-        recentTransactions
+      const dashboardData: DashboardCache = {
+        monthlySummary : monthlySummaries,
+        categorySummary : categorySummaries,
+        recentTransactions : recentTransactions,
       };
 
       // ------------------ STORE IN CACHE ------------------
-      console.log(`[DASHBOARD] Storing dashboard in Redis cache for user: ${userId}`);
-      await RedisService.set(`dashboard:${userId}`, JSON.stringify(dashboardStatistics), 300); // expire in 5 minutes
+      console.log(`[DASHBOARD] Caching dashboard data in Redis...`);
+      await RedisService.set(cacheKey, JSON.stringify(dashboardData), 7 * 24 * 60 * 60); // expire in 7 days
 
-      console.log(`[DASHBOARD] Dashboard successfully cached and returned for user: ${userId}`);
-      return dashboardStatistics;
+      console.log(`[DASHBOARD] Dashboard successfully fetched and cached.`);
+      return dashboardData;
 
     } catch (error) {
       console.error(`[DASHBOARD] Failed to fetch dashboard for user: ${userId}`, error);
@@ -64,3 +84,5 @@ export class DashboardService {
     }
   }
 }
+
+export default DashboardService;

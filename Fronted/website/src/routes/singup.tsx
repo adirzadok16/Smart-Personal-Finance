@@ -1,6 +1,6 @@
 import axios from "axios";
 import { useState } from "react";
-import { Link , useNavigate } from "react-router-dom";
+import { Link, useNavigate } from "react-router-dom";
 
 
 export default function Singup() {
@@ -19,10 +19,10 @@ export default function Singup() {
         setError("");
         try {
 
-            const response = await axios.post("http://localhost:3000/api/auth/register", {firstName,lastName,email,password });
-            if(response.status === 201){
-               alert("User registered successfully");
-               navigate("/login");
+            const response = await axios.post("http://localhost:3000/api/auth/register", { firstName, lastName, email, password });
+            if (response.status === 201) {
+                alert("User registered successfully");
+                navigate("/login");
             }
 
             console.log(response.data);
@@ -33,11 +33,11 @@ export default function Singup() {
             setLoading(false);
         }
     };
-  
+
 
     return (
         <div className="flex items-center justify-center min-h-screen bg-gradient-to-br from-slate-900 via-blue-900 to-slate-900">
-            <div className="bg-white w-full max-w-md p-8 rounded-xl shadow-2xl">
+            <div className="bg-gray-800 w-full max-w-md p-8 rounded-xl shadow-2xl border border-gray-700">
                 {/* Icon */}
                 <div className="flex justify-center mb-6">
                     <div className="flex items-center justify-center w-16 h-16 bg-gradient-to-br from-blue-600 to-blue-800 rounded-xl">
@@ -58,15 +58,15 @@ export default function Singup() {
                 </div>
                 {/* Title */}
                 <div className="text-center mb-6">
-                    <h1 className="text-3xl font-bold">Create Account</h1>
-                    <p className="text-gray-500">Start managing your finances today</p>
+                    <h1 className="text-3xl font-bold text-white">Create Account</h1>
+                    <p className="text-gray-400">Start managing your finances today</p>
                 </div>
 
                 {/* Form */}
                 <form onSubmit={handleSubmit} className="space-y-4">
                     {/* First Name */}
                     <div>
-                        <label htmlFor="firstName" className="block text-sm font-semibold mb-1">
+                        <label htmlFor="firstName" className="block text-sm font-semibold mb-1 text-gray-300">
                             First Name
                         </label>
                         <input
@@ -77,13 +77,13 @@ export default function Singup() {
                             value={firstName}
                             onChange={(e) => setFirstName(e.target.value)}
                             placeholder="Enter your first name"
-                            className="w-full border border-gray-300 rounded-lg p-2
-                         focus:outline-none focus:ring-2 focus:ring-blue-600"
+                            className="w-full bg-gray-700 border border-gray-600 rounded-lg p-2 text-white
+                         focus:outline-none focus:ring-2 focus:ring-blue-600 focus:border-transparent transition-all"
                         />
                     </div>
                     {/* Last Name */}
                     <div>
-                        <label htmlFor="lastName" className="block text-sm font-semibold mb-1">
+                        <label htmlFor="lastName" className="block text-sm font-semibold mb-1 text-gray-300">
                             Last Name
                         </label>
                         <input
@@ -94,13 +94,13 @@ export default function Singup() {
                             value={lastName}
                             onChange={(e) => setLastName(e.target.value)}
                             placeholder="Enter your last name"
-                            className="w-full border border-gray-300 rounded-lg p-2
-                         focus:outline-none focus:ring-2 focus:ring-blue-600"
+                            className="w-full bg-gray-700 border border-gray-600 rounded-lg p-2 text-white
+                         focus:outline-none focus:ring-2 focus:ring-blue-600 focus:border-transparent transition-all"
                         />
                     </div>
                     {/* Email */}
                     <div>
-                        <label htmlFor="email" className="block text-sm font-semibold mb-1">
+                        <label htmlFor="email" className="block text-sm font-semibold mb-1 text-gray-300">
                             Email
                         </label>
                         <input
@@ -111,18 +111,18 @@ export default function Singup() {
                             value={email}
                             onChange={(e) => setEmail(e.target.value)}
                             placeholder="Enter your email"
-                            className="w-full border border-gray-300 rounded-lg p-2
-                         focus:outline-none focus:ring-2 focus:ring-blue-600"
+                            className="w-full bg-gray-700 border border-gray-600 rounded-lg p-2 text-white
+                         focus:outline-none focus:ring-2 focus:ring-blue-600 focus:border-transparent transition-all"
                         />
                     </div>
 
                     {/* Password */}
                     <div>
-                        <label htmlFor="password" className="block text-sm font-semibold mb-1">
+                        <label htmlFor="password" className="block text-sm font-semibold mb-1 text-gray-300">
                             Password
                         </label>
                         <div className="relative">
-                            <input className="w-full border border-gray-300 rounded-lg p-2 focus:outline-none focus:ring-2 focus:ring-blue-600" type="password" name="password" placeholder="Enter your password" value={password} required onChange={(e) => setPassword(e.target.value)} />
+                            <input className="w-full bg-gray-700 border border-gray-600 rounded-lg p-2 text-white focus:outline-none focus:ring-2 focus:ring-blue-600 focus:border-transparent transition-all" type="password" name="password" placeholder="Enter your password" value={password} required onChange={(e) => setPassword(e.target.value)} />
                         </div>
                     </div>
 
@@ -141,11 +141,11 @@ export default function Singup() {
                     </button>
 
                     {/* Sign in */}
-                    <div className="text-center mt-6 text-sm text-gray-500">
+                    <div className="text-center mt-6 text-sm text-gray-400">
                         Already have an account?
                         <Link
                             to="/login"
-                            className="text-blue-600 font-semibold ml-1 hover:underline"
+                            className="text-blue-400 font-semibold ml-1 hover:underline"
                         >
                             Sign in
                         </Link>

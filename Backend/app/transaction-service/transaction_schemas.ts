@@ -1,4 +1,4 @@
-import { Entity,Column, PrimaryColumn } from 'typeorm';
+import { Entity, Column, PrimaryColumn } from 'typeorm';
 
 @Entity()
 export class Transaction_Table {
@@ -18,7 +18,7 @@ export class Transaction_Table {
   type!: string;
 
   @Column({ type: 'varchar' })
-  description!: string;
+  title!: string;
 
   @Column({ type: 'varchar' })
   date!: string;

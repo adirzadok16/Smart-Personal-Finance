@@ -6,7 +6,7 @@ import { Transaction } from "./transaction_models";
 
 export const transactionRoutes = Router();
 
-transactionRoutes.post('/transaction', authMiddleware, async (req, res) => {
+transactionRoutes.post('/addTransaction', authMiddleware, async (req, res) => {
   try {
     const userId = (req as any).user;
     const transaction: Transaction = await TransactionService.add_transaction(userId, req.body);
@@ -17,7 +17,7 @@ transactionRoutes.post('/transaction', authMiddleware, async (req, res) => {
   }
 });
 
-transactionRoutes.delete('/transaction', authMiddleware, async (req, res) => {
+transactionRoutes.delete('/deleteTransaction', authMiddleware, async (req, res) => {
   try {
     const userId = (req as any).user;
     const transaction: Transaction = await TransactionService.delete_transaction(userId, req.body);
@@ -29,7 +29,7 @@ transactionRoutes.delete('/transaction', authMiddleware, async (req, res) => {
 });
 
 
-transactionRoutes.put('/transaction', authMiddleware, async (req, res) => {
+transactionRoutes.put('/updateTransaction', authMiddleware, async (req, res) => {
   try {
     const userId = (req as any).user;
     const transaction: Transaction = await TransactionService.update_transaction(userId, req.body);
@@ -41,7 +41,7 @@ transactionRoutes.put('/transaction', authMiddleware, async (req, res) => {
 });
 
 
-transactionRoutes.get('/transactions', authMiddleware, async (req, res) => {
+transactionRoutes.get('/getTransactions', authMiddleware, async (req, res) => {
   try {
     const userId = (req as any).user;
     const transactions: Transaction[] = await TransactionService.get_transactions(userId);

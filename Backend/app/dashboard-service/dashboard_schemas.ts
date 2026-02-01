@@ -1,4 +1,4 @@
-import { Entity,Column, PrimaryColumn } from 'typeorm';
+import { Entity, Column, PrimaryColumn } from 'typeorm';
 
 @Entity()
 export class DashboardMonthlySummary {
@@ -50,9 +50,9 @@ export class DashboardRecentTransaction {
   userId!: string;
 
   @Column({ type: 'varchar' })
-  description!: string;
+  title!: string;
 
-   @Column({ type: 'varchar' })
+  @Column({ type: 'varchar' })
   category!: string;
 
   @Column({ type: 'varchar' })

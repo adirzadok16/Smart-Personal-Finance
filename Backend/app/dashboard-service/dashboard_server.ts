@@ -4,6 +4,7 @@ import { createAndInitServiceDatabase } from '../db/database';
 import { dashboardRoutes } from './dashboard_routes';
 import { startDashboardSubscriber } from './dashboard-consumer/dashboard_consumer';
 import { DashboardCategorySummary, DashboardMonthlySummary, DashboardRecentTransaction } from './dashboard_schemas';
+import cookieParser from 'cookie-parser';
 
 dotenv.config();
 
@@ -39,6 +40,7 @@ export const startDashboardServiceServer = async () => {
     // ---------------- Express ----------------
     const app = express();
     app.use(express.json());
+    app.use(cookieParser());
 
     app.use('/dashboard', dashboardRoutes);
 

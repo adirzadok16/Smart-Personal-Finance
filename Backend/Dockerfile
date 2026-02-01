@@ -5,7 +5,7 @@ FROM node:20-alpine
 WORKDIR /usr/src/app
 
 # Install dependencies
-# Copying package files separately to leverage Docker cache
+RUN apk add --no-cache curl
 COPY package*.json ./
 RUN npm install
 

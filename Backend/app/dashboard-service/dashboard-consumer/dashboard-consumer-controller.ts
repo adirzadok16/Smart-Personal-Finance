@@ -1,4 +1,4 @@
-import { Repository } from 'typeorm';
+import { MoreThan, Repository } from 'typeorm';
 import { getServiceDatabase } from '../../db/database';
 import RedisService from '../../utilities/redis_service';
 import { TransactionCreatedEvent, TransactionUpdatedEvent, TransactionDeletedEvent, TransactionType } from '../dashboard_models';
@@ -77,7 +77,7 @@ export async function updateSummaries(
     await updateMonthlySummary(monthlyRepo, data, action);
     await updateCategorySummary(categoryRepo, data, action);
     await updateRecentTransaction(recentTransactionRepo, data, action);
-    await updateDashboardCache(data.userId, data.month, data.year);
+    await updateDashboardCache(data.userId);
 
     console.log(`[SUMMARIES] Summaries and cache updated for user: ${data.userId}`);
 }
@@ -228,7 +228,7 @@ async function updateRecentTransaction(
             await repo.upsert({
                 transactionId: transactionData.transactionId,
                 userId: transactionData.userId,
-                description: transactionData.description,
+                title: transactionData.description,
                 category: transactionData.category,
                 type: transactionData.type,
                 amount: transactionData.amount,
@@ -240,7 +240,7 @@ async function updateRecentTransaction(
             await repo.upsert({
                 transactionId: transactionData.transactionId,
                 userId: transactionData.userId,
-                description: transactionData.newDescription,
+                title: transactionData.newDescription,
                 category: transactionData.newCategory,
                 type: transactionData.type,
                 amount: transactionData.newAmount,
@@ -256,29 +256,49 @@ async function updateRecentTransaction(
 }
 
 // ------------------ DASHBOARD CACHE ------------------
-async function updateDashboardCache(userId: string, month: number, year: number) {
-    console.log(`[CACHE] Updating dashboard cache for user: ${userId}, month: ${month}, year: ${year}`);
+async function updateDashboardCache(userId: string) {
+    console.log(`[CACHE] Updating dashboard cache for user: ${userId}`);
+
     try {
-        const cacheKey = `dashboard:${userId}:${year}:${month}`;
         const db = getServiceDatabase('dashboard');
         const monthlyRepo = db.getRepository(DashboardMonthlySummary);
         const categoryRepo = db.getRepository(DashboardCategorySummary);
         const transactionRepo = db.getRepository(DashboardRecentTransaction);
 
-        const [monthlySummary, categorySummary, recentTransactions] = await Promise.all([
-            monthlyRepo.findOne({ where: { userId, month, year } }),
-            categoryRepo.find({ where: { userId, month, year } }),
-            transactionRepo.find({ where: { userId }, order: { date: 'DESC' }, take: 10 }),
-        ]);
+        const now = new Date();
+        const currentYear = now.getFullYear();
+        const sixMonthsAgo = new Date();
+        sixMonthsAgo.setMonth(now.getMonth() - 6);
+
+        // Fetch all monthly summaries for the current year
+        const monthlySummary = await monthlyRepo.find({
+            where: { userId, year: currentYear },
+            order: { month: 'ASC' }
+        });
+
+        // Fetch all category summaries for the current year
+        const categorySummary = await categoryRepo.find({
+            where: { userId, year: currentYear },
+        });
+
+        // Fetch recent transactions from the last 6 months
+        const recentTransactions = await transactionRepo.find({
+            where: {
+                userId,
+                date: MoreThan(sixMonthsAgo.toISOString())
+            },
+            order: { date: 'DESC' }
+        });
 
         const dashboardData = {
-            monthlySummary: monthlySummary || { totalIncome: 0, totalExpense: 0, balance: 0 },
+            monthlySummary,
             categorySummary,
-            recentTransactions,
+            recentTransactions
         };
 
-        await RedisService.set(cacheKey, JSON.stringify(dashboardData), 300);
-        console.log(`[CACHE] Dashboard cache updated successfully.`);
+        const cacheKey = `dashboard:${userId}`;
+        await RedisService.set(cacheKey, JSON.stringify(dashboardData), 604800); //1 week TTL
+        console.log(`[CACHE] Dashboard cache updated successfully for user: ${userId}`);
     } catch (error) {
         console.error(`[CACHE] Failed to update dashboard cache for user: ${userId}`, error);
     }

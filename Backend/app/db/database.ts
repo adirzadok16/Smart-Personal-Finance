@@ -129,3 +129,67 @@ async function checkIfDatabaseExists(databaseUrl: string) {
     console.log(`🔌 Closed temporary connection for database check`);
   }
 }
+
+/**
+ * dropTablesInDatabase
+ * מוחק את כל הטבלאות שהגדרת ב־DB מסוים
+ */
+export async function dropTablesInDatabase(databaseUrl: string, tables: string[]) {
+  if (!tables.length) return;
+
+  const client = new Client({ connectionString: databaseUrl });
+  await client.connect();
+  console.log(`🔌 Connected to database to drop tables`);
+
+  for (const table of tables) {
+    try {
+      await client.query(`DROP TABLE IF EXISTS "${table}" CASCADE`);
+      console.log(`✅ Table "${table}" dropped`);
+    } catch (err) {
+      console.error(`❌ Error dropping table "${table}":`, err);
+    }
+  }
+
+  await client.end();
+  console.log(`🔌 Connection closed`);
+}
+
+/**
+ * dropAllTablesAcrossServices
+ * מוחק את כל הטבלאות בכל מסדי הנתונים שלך
+ */
+export async function dropAllTablesAcrossServices() {
+  // קח את הסיסמא מה-env
+  const POSTGRES_PASSWORD = process.env.POSTGRES_PASSWORD || 'postgres';
+
+  // Auth DB
+  await dropTablesInDatabase(
+    `postgresql://postgres:${POSTGRES_PASSWORD}@db:5432/auth_db`,
+    ['user_table']
+  );
+
+  // Transaction DB
+  await dropTablesInDatabase(
+    `postgresql://postgres:${POSTGRES_PASSWORD}@db:5432/transaction_db`,
+    ['transaction_table']
+  );
+
+  // Dashboard DB
+  await dropTablesInDatabase(
+    `postgresql://postgres:${POSTGRES_PASSWORD}@db:5432/dashboard_db`,
+    [
+      'dashboard_monthly_summary',
+      'dashboard_category_summary',
+      'dashboard_recent_transaction',
+    ]
+  );
+
+  console.log('🎉 All tables dropped across all services');
+}
+
+
+
+
+
+
+

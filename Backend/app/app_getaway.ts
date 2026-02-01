@@ -5,6 +5,7 @@ import cors from '@fastify/cors';
 
 
 
+
 dotenv.config();
 
 /**
@@ -21,11 +22,23 @@ dotenv.config();
 export const startGateway = async () => {
   const app = Fastify();
 
-   await app.register(cors, {
-    origin: 'http://localhost:5173', // Vite
+  // 1. GLOBAL LOGGING - First thing to run
+  app.addHook('onRequest', (request, reply, done) => {
+    console.log(`[GATEWAY GLOBAL] ${request.method} ${request.url}`);
+    done();
+  });
+
+  await app.register(cors, {
+    origin: 'http://localhost:5173',
     methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
     allowedHeaders: ['Content-Type', 'Authorization'],
     credentials: true,
+  });
+
+  // 2. TEST ROUTE - To check if Gateway is alive
+  app.get('/api/test', async () => {
+    console.log('[GATEWAY] Test route hit');
+    return { message: 'Gateway is working!' };
   });
 
   app.register(httpProxy, {
@@ -35,15 +48,25 @@ export const startGateway = async () => {
   });
 
   app.register(httpProxy, {
-    upstream: process.env.REVIEW_SERVICE_URL || 'http://localhost:3002',
-    prefix: '/api/review',
-    rewritePrefix: '/review',
+    upstream: process.env.TRANSACTION_SERVICE_URL || 'http://localhost:3002',
+    prefix: '/api/transaction',
+    rewritePrefix: '/transaction',
   });
 
   app.register(httpProxy, {
-    upstream: process.env.HISTORY_SERVICE_URL || 'http://localhost:3003',
-    prefix: '/api/history',
-    rewritePrefix: '/history',
+    upstream: process.env.DASHBOARD_SERVICE_URL || 'http://localhost:3003',
+    prefix: '/api/dashboard',
+    rewritePrefix: '/dashboard',
+  });
+
+  // 3. CATCH-ALL 404 handler
+  app.setNotFoundHandler((request, reply) => {
+    console.log(`[GATEWAY 404] No route for: ${request.method} ${request.url}`);
+    reply.status(404).send({
+      error: 'Not Found',
+      message: `The Gateway does not have a route for ${request.url}`,
+      debug_hint: 'Check prefix and rewritePrefix configuration'
+    });
   });
 
   app.get('/health', async () => ({ status: 'Gateway is UP' }));

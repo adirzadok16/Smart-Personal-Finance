@@ -5,7 +5,7 @@ export interface Transaction {
   category: string;
   type: string;
   date: string;
-  description: string;
+  title: string;
 }
 
 export interface createTransactionDto {
@@ -13,7 +13,7 @@ export interface createTransactionDto {
   category: string;
   type: string;
   date: string;
-  description: string;
+  title: string;  
 }
 
 
@@ -26,15 +26,15 @@ export interface updateTransactionDto {
   oldCategory: string;
   newCategory: string;
   date: string;
-  oldDescription: string;
-  newDescription: string;
+  oldTitle: string;
+  newTitle: string;
 }
 
 export interface deleteTransactionDto {
   transaction_id: string;
   amount: number;
-  type: string; 
+  type: string;
   category: string;
   date: string;
-  description: string;
+  title: string;
 }
