@@ -92,7 +92,7 @@ class RedisService {
      * Delete a key from Redis
      * @param key - Redis key
      */
-    public static async del(key: string) {
+    public static async delete(key: string) {
         const client = await RedisService.getClient();
         console.log(`[REDIS] Deleting key: ${key}`);
         return await client.del(key);

@@ -3,6 +3,7 @@ import { getServiceDatabase } from '../../db/database';
 import RedisService from '../../utilities/redis_service';
 import { TransactionCreatedEvent, TransactionUpdatedEvent, TransactionDeletedEvent, TransactionType } from '../dashboard_models';
 import { DashboardMonthlySummary, DashboardCategorySummary, DashboardRecentTransaction } from '../dashboard_schemas';
+import DashboardService from '../dashboard_service';
 
 // ------------------ CORE LOGIC ------------------
 
@@ -44,6 +45,9 @@ export async function processTransaction(
             }
         });
 
+        console.log('[PROCESS] Updating cache...');
+        await updateDashboardCache(data.userId);
+
         console.log(`[PROCESS] Transaction process completed for user: ${data.userId}`);
     } catch (error) {
         console.error(`[PROCESS] Failed to handle transaction for user: ${data.userId}`, error);
@@ -77,9 +81,8 @@ export async function updateSummaries(
     await updateMonthlySummary(monthlyRepo, data, action);
     await updateCategorySummary(categoryRepo, data, action);
     await updateRecentTransaction(recentTransactionRepo, data, action);
-    await updateDashboardCache(data.userId);
 
-    console.log(`[SUMMARIES] Summaries and cache updated for user: ${data.userId}`);
+    console.log(`[SUMMARIES] DB Tables updated for user: ${data.userId}`);
 }
 
 // ------------------ MONTHLY SUMMARY ------------------
@@ -107,18 +110,21 @@ async function updateMonthlySummary(
         });
         console.log(`[MONTHLY] Created new monthly summary.`);
     } else {
-        transactionData = data as any;
         switch (action) {
             case 'create':
+                transactionData = data as TransactionCreatedEvent;
                 if (transactionData.type === TransactionType.INCOME) {
-                    monthlySummary.totalIncome += transactionData.amount;
+                    monthlySummary.totalIncome = Number(monthlySummary.totalIncome) + transactionData.amount;
+                    console.log(`[MONTHLY] New Total Income: ${monthlySummary.totalIncome}`);
                 } else {
-                    monthlySummary.totalExpense += transactionData.amount;
+                    monthlySummary.totalExpense = Number(monthlySummary.totalExpense) + transactionData.amount;
+                    console.log(`[MONTHLY] New Total Expense: ${monthlySummary.totalExpense}`);
                 }
                 monthlySummary.balance = monthlySummary.totalIncome - monthlySummary.totalExpense;
                 console.log(`[MONTHLY] Monthly summary updated for create.`);
                 break;
             case 'update':
+                transactionData = data as TransactionUpdatedEvent;
                 if (transactionData.oldAmount === transactionData.newAmount) return;
                 if (transactionData.type === TransactionType.INCOME) {
                     monthlySummary.totalIncome -= transactionData.oldAmount;
@@ -131,6 +137,7 @@ async function updateMonthlySummary(
                 console.log(`[MONTHLY] Monthly summary updated for update.`);
                 break;
             case 'delete':
+                transactionData = data as TransactionDeletedEvent;
                 if (transactionData.type === TransactionType.INCOME) {
                     monthlySummary.totalIncome -= transactionData.amount;
                 } else {
@@ -142,7 +149,8 @@ async function updateMonthlySummary(
         }
     }
 
-    await repo.save(monthlySummary);
+    const s = await repo.save(monthlySummary);
+    console.log(s);
     console.log(`[MONTHLY] Monthly summary saved.`);
 }
 
@@ -165,7 +173,7 @@ async function updateCategorySummary(
             if (!categorySummary) {
                 categorySummary = repo.create({ ...filter, amount: transactionData.amount });
             } else {
-                categorySummary.amount += transactionData.amount;
+                categorySummary.amount = Number(categorySummary.amount) + transactionData.amount;
             }
             await repo.save(categorySummary);
             console.log(`[CATEGORY] Category summary updated for create.`);
@@ -222,32 +230,38 @@ async function updateRecentTransaction(
     console.log(`[RECENT] Updating recent transactions for user: ${data.userId}, Action: ${action}`);
     let transactionData: any;
 
-    switch (action) {
+      switch (action) {
         case 'create':
+            console.log('[RECENT] Create recent transactions');
             transactionData = data as TransactionCreatedEvent;
-            await repo.upsert({
+            const createRecentTransaction = await repo.save({
                 transactionId: transactionData.transactionId,
                 userId: transactionData.userId,
-                title: transactionData.description,
+                title: transactionData.title || transactionData.description,
                 category: transactionData.category,
                 type: transactionData.type,
+                date: convertDate(transactionData.date), // ✅ CHANGED
                 amount: transactionData.amount,
-            }, { conflictPaths: ['transactionId'], skipUpdateIfNoValuesChanged: true });
+            });
+            console.log('[RECENT] Create recent transactions', createRecentTransaction);
             break;
 
         case 'update':
+            console.log('[RECENT] Update recent transactions');
             transactionData = data as TransactionUpdatedEvent;
             await repo.upsert({
                 transactionId: transactionData.transactionId,
                 userId: transactionData.userId,
-                title: transactionData.newDescription,
+                title: transactionData.newTitle || transactionData.newDescription,
                 category: transactionData.newCategory,
                 type: transactionData.type,
+                date: convertDate(transactionData.date), // ✅ CHANGED
                 amount: transactionData.newAmount,
             }, { conflictPaths: ['transactionId'], skipUpdateIfNoValuesChanged: true });
             break;
 
         case 'delete':
+            console.log('[RECENT] Delete recent transactions');
             transactionData = data as TransactionDeletedEvent;
             await repo.delete({ transactionId: transactionData.transactionId });
             break;
@@ -258,48 +272,23 @@ async function updateRecentTransaction(
 // ------------------ DASHBOARD CACHE ------------------
 async function updateDashboardCache(userId: string) {
     console.log(`[CACHE] Updating dashboard cache for user: ${userId}`);
-
+    const cacheKey = `dashboard:${userId}`;
+    const CACHE_TTL = 60 * 60 * 24; // 24 hours
     try {
-        const db = getServiceDatabase('dashboard');
-        const monthlyRepo = db.getRepository(DashboardMonthlySummary);
-        const categoryRepo = db.getRepository(DashboardCategorySummary);
-        const transactionRepo = db.getRepository(DashboardRecentTransaction);
+        // DO NOT rebuild the logic here. 
+        // Simply call the Service's getDashboard method.
+        // It already handles fetching from DB with the correct filters/sorting 
+        // and saving the result to Redis.
+        await DashboardService.fetchAndCacheDashboardData(userId, cacheKey, CACHE_TTL);
 
-        const now = new Date();
-        const currentYear = now.getFullYear();
-        const sixMonthsAgo = new Date();
-        sixMonthsAgo.setMonth(now.getMonth() - 6);
-
-        // Fetch all monthly summaries for the current year
-        const monthlySummary = await monthlyRepo.find({
-            where: { userId, year: currentYear },
-            order: { month: 'ASC' }
-        });
-
-        // Fetch all category summaries for the current year
-        const categorySummary = await categoryRepo.find({
-            where: { userId, year: currentYear },
-        });
-
-        // Fetch recent transactions from the last 6 months
-        const recentTransactions = await transactionRepo.find({
-            where: {
-                userId,
-                date: MoreThan(sixMonthsAgo.toISOString())
-            },
-            order: { date: 'DESC' }
-        });
-
-        const dashboardData = {
-            monthlySummary,
-            categorySummary,
-            recentTransactions
-        };
-
-        const cacheKey = `dashboard:${userId}`;
-        await RedisService.set(cacheKey, JSON.stringify(dashboardData), 604800); //1 week TTL
-        console.log(`[CACHE] Dashboard cache updated successfully for user: ${userId}`);
+        console.log(`[CACHE] Dashboard cache updated successfully via DashboardService.`);
     } catch (error) {
         console.error(`[CACHE] Failed to update dashboard cache for user: ${userId}`, error);
     }
+}
+
+function convertDate(date: string): string {
+    if (date.includes('T')) return date; // already ISO
+    const [day, month, year] = date.split('-');
+    return `${year}-${month}-${day}`;
 }

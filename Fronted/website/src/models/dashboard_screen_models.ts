@@ -25,8 +25,23 @@ export interface RecentTransaction {
   date: string;
 }
 
+export interface MonthlyIncomeExpense {
+  month: number;
+  year: number;
+  totalIncome: number;
+  totalExpense: number;
+  balance: number;
+}
+
+export interface MonthlyCategories {
+  month: number;
+  year: number;
+  categories: { category: string; amount: number }[];
+}
+
 export interface DashboardCache {
   monthlySummary: MonthlySummary[];
-  categorySummary: CategorySummary[];
+  categorySummary: MonthlyCategories[];
   recentTransactions: RecentTransaction[];
+  currentMonthIncomeAndExpense: MonthlyIncomeExpense;
 }

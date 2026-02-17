@@ -3,7 +3,7 @@ import Login from './routes/login'
 import Singup from './routes/singup'
 import Home from './routes/home'
 import Dashboard from './routes/dashboard'
-import AddTransaction from './routes/add_tranactions'
+import AddTransaction from './routes/addTranactions'
 
 function App() {
   return (

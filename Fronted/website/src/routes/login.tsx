@@ -1,6 +1,7 @@
 import { useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import axios from "axios";
+import Swal from "sweetalert2";
 
 export default function Login() {
     const navigate = useNavigate();
@@ -31,7 +32,15 @@ export default function Login() {
                 { withCredentials: true } // let axios know to send cookies
             );
             if (response.status === 200) {
-                alert("User logged in successfully");
+                await Swal.fire({
+                    toast: true,
+                    position: "bottom-right",
+                    icon: "success",
+                    title: `logging in`,
+                    showConfirmButton: false,
+                    timer: 1500,
+                    timerProgressBar: true
+                });
                 navigate("/dashboard");
             }
             console.log(response.data);

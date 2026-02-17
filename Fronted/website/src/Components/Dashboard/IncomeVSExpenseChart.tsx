@@ -1,16 +1,26 @@
 import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer } from "recharts";
 import { motion } from "framer-motion";
+import type { MonthlyIncomeExpense } from "../../models/dashboard_screen_models";
+import { monthNamesShort } from "../../constants/consts";
 
-const data = [
-    { month: "Jan", income: 4500, expenses: 3200 },
-    { month: "Feb", income: 5200, expenses: 3800 },
-    { month: "Mar", income: 4800, expenses: 4100 },
-    { month: "Apr", income: 6100, expenses: 4500 },
-    { month: "May", income: 5900, expenses: 4200 },
-    { month: "Jun", income: 6500, expenses: 4800 },
-];
 
-export default function IncomeExpenseChart() {
+interface IncomeExpenseChartProps {
+    expenseChartData: MonthlyIncomeExpense[];
+}
+
+export default function IncomeVSExpenseChart({ expenseChartData }: IncomeExpenseChartProps) {
+
+    const chartData = expenseChartData
+        .sort((a, b) => a.month - b.month)
+        .map(item => {
+            return {
+                month: monthNamesShort[item.month - 1],
+
+                income: item.totalIncome,
+                expenses: item.totalExpense
+            };
+        });
+
     return (
         <motion.div
             initial={{ opacity: 0, y: 20 }}
@@ -33,13 +43,13 @@ export default function IncomeExpenseChart() {
 
             <div className="h-[350px] w-full">
                 <ResponsiveContainer width="100%" height="100%">
-                    <LineChart data={data}>
+                    <LineChart data={chartData}>
                         <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#374151" />
                         <XAxis
                             dataKey="month"
                             axisLine={false}
                             tickLine={false}
-                            tick={{ fill: '#6b7280', fontSize: 12 }}
+                            tick={{ fill: '#fff', fontSize: 12 }}
                             dy={10}
                         />
                         <YAxis
@@ -48,8 +58,14 @@ export default function IncomeExpenseChart() {
                             tick={{ fill: '#6b7280', fontSize: 12 }}
                         />
                         <Tooltip
-                            contentStyle={{ backgroundColor: '#1f2937', borderRadius: '12px', border: '1px solid #374151', boxShadow: '0 4px 6px -1px rgb(0 0 0 / 0.1)' }}
-                            itemStyle={{ color: '#fff' }}
+                            contentStyle={{
+                                backgroundColor: '#1f2937',
+                                borderRadius: '12px',
+                                border: '1px solid #374151',
+                                boxShadow: '0 4px 6px -1px rgb(0 0 0 / 0.1)'
+                            }}
+                            itemStyle={{ color: '#fff' }}      // צבע הערכים (income, expenses)
+                            labelStyle={{ color: '#facc15' }}  // צבע שם החודש שמופיע ב-tooltip
                         />
                         <Line
                             type="monotone"
@@ -73,3 +89,4 @@ export default function IncomeExpenseChart() {
         </motion.div>
     );
 }
+

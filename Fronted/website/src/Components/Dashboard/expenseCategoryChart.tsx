@@ -1,7 +1,14 @@
 import { useState } from "react";
 import { PieChart, Pie, Cell, ResponsiveContainer, Legend, Tooltip } from "recharts";
 import { motion } from "framer-motion";
+import type { MonthlyCategories } from "../../models/dashboard_screen_models";
+import { currentMonth, currentYear, years, months } from "../../constants/consts";
+import Swal from "sweetalert2";
 
+
+interface ExpenseDistributionChartProps {
+    expenseChartData: MonthlyCategories[];
+}
 const data = [
     { name: "Food", value: 400 },
     { name: "Rent", value: 1200 },
@@ -12,27 +19,39 @@ const data = [
 
 const COLORS = ["#3b82f6", "#10b981", "#f59e0b", "#ef4444", "#8b5cf6"];
 
-const months = [
-    "January", "February", "March", "April", "May", "June",
-    "July", "August", "September", "October", "November", "December"
-];
 
-const years = ["2024", "2025", "2026"];
 
-export default function ExpenseChart() {
-    const [month, setMonth] = useState("January");
-    const [year, setYear] = useState("2026");
+export default function ExpenseDistributionChart({ expenseChartData }: ExpenseDistributionChartProps) {
+
+    const [month, setMonth] = useState(months[currentMonth - 1]);
+    const [year, setYear] = useState(currentYear);
+    const firstData = expenseChartData.find((item) => item.month === (months.indexOf(month) + 1) && item.year === year);
+    const [chartData, setChartData] = useState<{ category: string; amount: number }[]>(firstData?.categories || []);
 
     const handleShow = () => {
         // Here you would typically fetch data based on month/year
-        console.log(`Showing data for ${month} ${year}`);
+        const monthNumber = months.indexOf(month) + 1;
+        const data = expenseChartData.find((item) => item.month === monthNumber && item.year === year);
+        if (data) {
+            setChartData(data.categories);
+        } else {
+            Swal.fire({
+                toast: true,
+                position: "center",
+                icon: "info",
+                title: "No data for selected date",
+                showConfirmButton: false,
+                timer: 1800,
+                timerProgressBar: true
+            });
+        }
     };
 
     return (
         <motion.div
             initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}
-            className="flex flex-col bg-gray-800 border border-gray-700 rounded-2xl shadow-sm p-6 mt-8 w-full max-w-6xl mx-4"
+            className="flex flex-col bg-gray-800 border border-gray-700 rounded-2xl shadow-sm p-6 mt-8 w-full max-w-6xl mx-4 mb-8"
         >
             <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4 mb-8">
                 <h1 className="text-xl font-bold text-white">Expense Distribution</h1>
@@ -48,7 +67,7 @@ export default function ExpenseChart() {
 
                     <select
                         value={year}
-                        onChange={(e) => setYear(e.target.value)}
+                        onChange={(e) => setYear(Number(e.target.value))}
                         className="bg-gray-700 border border-gray-600 text-white text-sm rounded-lg focus:ring-blue-500 focus:border-blue-500 block p-2.5 transition-all outline-hidden cursor-pointer"
                     >
                         {years.map(y => <option key={y} value={y}>{y}</option>)}
@@ -63,20 +82,21 @@ export default function ExpenseChart() {
                 </div>
             </div>
 
-            <div className="h-[400px] w-full">
+            <div className="h-[400px] w-full mb" >
                 <ResponsiveContainer width="100%" height="100%">
                     <PieChart>
                         <Pie
-                            data={data}
+                            data={chartData}
+                            dataKey="amount"
+                            nameKey="category"
                             cx="50%"
                             cy="50%"
                             innerRadius={80}
                             outerRadius={120}
                             paddingAngle={5}
-                            dataKey="value"
                         >
-                            {data.map((_, index) => (
-                                <Cell key={`cell-${index}`} fill={COLORS[index % COLORS.length]} />
+                            {chartData.map((_, index) => (
+                                <Cell key={index} fill={COLORS[index % COLORS.length]} />
                             ))}
                         </Pie>
                         <Tooltip

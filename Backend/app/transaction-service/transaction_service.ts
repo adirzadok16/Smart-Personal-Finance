@@ -3,7 +3,7 @@ import { v4 as uuidv4 } from 'uuid';
 import { Transaction_Table } from './transaction_schemas';
 import { getServiceDatabase } from '../db/database';
 import RabbitMQService from '../utilities/rabbitmq';
-import { getMonthAndYear } from '../utilities/helpers'; 
+import { getMonthAndYear } from '../utilities/helpers';
 
 export class TransactionService {
 
@@ -58,14 +58,17 @@ export class TransactionService {
 
     console.log(`[ADD] Publishing event to RabbitMQ...`);
     await RabbitMQService.publish('transactions', 'transaction.created', {
-      transactionId: savedTransaction.transaction_id,
-      userId: savedTransaction.user_id,
-      amount: savedTransaction.amount,
-      category: savedTransaction.category,
-      type: savedTransaction.type,
-      month: month,
-      year: year,
-      description: savedTransaction.title,
+      data: {
+        transactionId: savedTransaction.transaction_id,
+        userId: savedTransaction.user_id,
+        amount: Number(savedTransaction.amount),
+        category: savedTransaction.category,
+        type: savedTransaction.type,
+        month: month,
+        year: year,
+        date: savedTransaction.date,
+        description: savedTransaction.title,
+      }
     });
     console.log(`[ADD] Event published successfully.`);
 

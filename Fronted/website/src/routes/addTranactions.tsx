@@ -1,6 +1,7 @@
 import axios from "axios";
 import { useState, useEffect, useRef, type FormEvent } from "react";
 import { useNavigate } from "react-router-dom";
+import Swal from "sweetalert2";
 
 export default function AddTransaction() {
     const navigate = useNavigate();
@@ -69,17 +70,18 @@ export default function AddTransaction() {
         const formattedDate = `${day}-${month}-${year}`;
 
         try {
+
             const response = await axios.post(
                 "http://localhost:3000/api/transaction/addTransaction",
                 {
-                    title: "Groceries",
-                    amount: 120,
-                    type: "expense",        // חשוב: lowercase
-                    category: "Food",
+                    title: title,
+                    amount: amount,
+                    type: type.toLowerCase(),
+                    category: category,
                     date: formattedDate,
                 },
                 {
-                    withCredentials: true, // 🔥 חובה בשביל authMiddleware
+                    withCredentials: true, 
                     headers: {
                         "Content-Type": "application/json",
                     },
@@ -87,7 +89,16 @@ export default function AddTransaction() {
             );
 
             if (response.status === 201) {
-                console.log("✅ Transaction added:", response.data);
+               await Swal.fire({
+                toast: true,
+                position: "center",
+                icon: "success",
+                title: `Transaction added successfully`,
+                showConfirmButton: false,
+                timer: 1500,
+                timerProgressBar: true
+               })
+                navigate('/dashboard')
             }
         } catch (err: any) {
             console.error(

@@ -1,6 +1,7 @@
 import axios from "axios";
 import { useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
+import Swal from "sweetalert2";
 
 
 export default function Singup() {
@@ -21,7 +22,15 @@ export default function Singup() {
 
             const response = await axios.post("http://localhost:3000/api/auth/register", { firstName, lastName, email, password });
             if (response.status === 201) {
-                alert("User registered successfully");
+                await Swal.fire({
+                    toast: true,
+                    position: "bottom-right",
+                    icon: "success",
+                    title: "User registered successfully",
+                    showConfirmButton: false,
+                    timer: 1500,
+                    timerProgressBar: true
+                });
                 navigate("/login");
             }
 

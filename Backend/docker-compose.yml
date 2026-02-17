@@ -1,4 +1,3 @@
-
 services:
   # Database Service (PostgreSQL)
   db:
@@ -14,7 +13,7 @@ services:
     networks:
       - app-network
     healthcheck:
-      test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER}"]
+      test: [ "CMD-SHELL", "pg_isready -U ${POSTGRES_USER}" ]
       interval: 10s
       timeout: 5s
       retries: 5
@@ -31,7 +30,7 @@ services:
     env_file:
       - .env
     healthcheck:
-      test: ["CMD", "redis-cli", "-a", "${REDIS_PASSWORD}", "ping"]
+      test: [ "CMD", "redis-cli", "-a", "${REDIS_PASSWORD}", "ping" ]
       interval: 10s
       timeout: 5s
       retries: 5
@@ -44,13 +43,13 @@ services:
       RABBITMQ_DEFAULT_USER: ${RABBITMQ_USER}
       RABBITMQ_DEFAULT_PASS: ${RABBITMQ_PASSWORD}
     env_file:
-      - .env.docker
+      - .env
     volumes:
       - rabbitmq_data:/var/lib/rabbitmq
     networks:
       - app-network
     healthcheck:
-      test: ["CMD", "rabbitmq-diagnostics", "-q", "ping"]
+      test: [ "CMD", "rabbitmq-diagnostics", "-q", "ping" ]
       interval: 10s
       timeout: 5s
       retries: 5
@@ -62,7 +61,7 @@ services:
     ports:
       - "3000:3000"
     env_file:
-      - .env.docker
+      - .env
     depends_on:
       db:
         condition: service_healthy
@@ -73,15 +72,35 @@ services:
     networks:
       - app-network
     healthcheck:
-      test: ["CMD", "curl", "-f", "http://localhost:3000/health"]
+      test: [ "CMD", "curl", "-f", "http://localhost:3000/health" ]
       interval: 30s
       timeout: 10s
       retries: 3
+
+  # pgAdmin Service
+  pgadmin:
+    image: dpage/pgadmin4:7.7
+    restart: unless-stopped
+    environment:
+      PGADMIN_DEFAULT_EMAIL: ${PGADMIN_EMAIL} # או הגדר ב-env אם רוצים
+      PGADMIN_DEFAULT_PASSWORD: ${PGADMIN_PASSWORD} # או הגדר ב-env
+    env_file:
+      - .env
+    ports:
+      - "8080:80" # פורט גישה דרך הדפדפן
+    depends_on:
+      - db
+    networks:
+      - app-network
+    volumes:
+      - pgadmin_data:/var/lib/pgadmin
 
 volumes:
   postgres_data:
   redis_data:
   rabbitmq_data:
+  pgadmin_data:
+
 
 networks:
   app-network:

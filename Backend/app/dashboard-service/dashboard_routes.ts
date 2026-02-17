@@ -1,7 +1,7 @@
 // dashboard.routes.ts
 import { Router } from 'express';
 import { authMiddleware } from '../utilities/auth_middleware';
-import { DashboardService } from './dashboard_service';
+import  DashboardService  from './dashboard_service';
 
 export const dashboardRoutes = Router();
 

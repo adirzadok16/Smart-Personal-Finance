@@ -7,10 +7,10 @@ export async function startDashboardSubscriber() {
     'transactions',
     'dashboard-service-queue',
     ['transaction.created', 'transaction.updated', 'transaction.deleted'],
-    async (event: any) => {
+    async (event: any, routingKey: string) => {
       try {
-        // Dispatch לכל handler לפי סוג האירוע
-        switch (event.type) {
+        console.log('Received event:', event);
+        switch (routingKey) {
           case 'transaction.created':
             await processTransaction(event.data, 'create');
             break;
@@ -24,10 +24,10 @@ export async function startDashboardSubscriber() {
             break;
 
           default:
-            console.warn(`Unhandled event type: ${event.type}`);
+            console.warn(`Unhandled event type: ${routingKey}`);
         }
       } catch (error) {
-        console.error(`Error handling event ${event.type}:`, error);
+        console.error(`Error handling event ${routingKey}:`, error);
       }
     }
   );
