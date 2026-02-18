@@ -4,6 +4,7 @@ import Singup from './routes/singup'
 import Home from './routes/home'
 import Dashboard from './routes/dashboard'
 import AddTransaction from './routes/addTranactions'
+import TransactionsList from './routes/transactionsList.tsx'
 
 function App() {
   return (
@@ -14,6 +15,7 @@ function App() {
         <Route path="/signup" element={<Singup />} />
         <Route path="/dashboard" element={<Dashboard />} />
         <Route path="/add-transaction" element={<AddTransaction />} />
+        <Route path="/transactionsList" element={<TransactionsList />} />
       </Routes>
     </ReactRouter>
   )

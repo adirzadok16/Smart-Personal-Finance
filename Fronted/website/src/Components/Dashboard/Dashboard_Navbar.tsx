@@ -32,9 +32,9 @@ export default function Navbar() {
                     <polyline points="22 7 13.5 15.5 8.5 10.5 2 17" />
                     <polyline points="16 7 22 7 22 13" />
                 </svg>
-                <span className="text-white font-semibold text-xl">
+                <Link to="/dashboard" className="text-white font-semibold text-xl">
                     Smart Finance
-                </span>
+                </Link>
             </div>
             <div className="flex items-center gap-4">
                 <div className="flex items-center gap-4 pr-10">

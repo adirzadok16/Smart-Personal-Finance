@@ -16,3 +16,15 @@ dashboardRoutes.get('/', authMiddleware, async (req, res) => {
   }
 });
 
+dashboardRoutes.get('/transactions', authMiddleware, async (req, res) => {
+  try {
+    const userId = (req as any).user;
+    const days = req.query.days as string;
+    const transactions = await DashboardService.getRecentTransactions(userId, Number(days));
+    res.status(200).json({ message: "Transactions fetched successfully", success: true, transactions: transactions })
+  } catch (error) {
+    console.error(error);
+    res.status(500).json({ message: "Failed to fetch transactions", success: false, error: error });
+  }
+});
+

@@ -15,7 +15,7 @@ interface StatCardProps {
 
 export default function GeneralData({ data }: GeneralDataProps) {
     const stats = [
-        { title: "Total Balance", value: data.balance },
+        { title: "Total Balance", value: data.balance, badge: { text: "This month", color: "blue" } },
         { title: "Income", value: data.totalIncome, badge: { text: "This month", color: "green" } },
         { title: "Expenses", value: data.totalExpense, badge: { text: "This month", color: "red" } },
     ];
@@ -42,9 +42,11 @@ function StatCard({ title, value, badge, month, year }: StatCardProps) {
             whileHover={{ y: -5 }}
             className="flex flex-col items-center justify-center bg-gray-800 border border-gray-700 p-6 rounded-2xl shadow-sm hover:shadow-md transition-shadow"
         >
-            <p className="text-sm font-medium text-gray-400 uppercase tracking-wider">({month}/{year})</p>
-            <h1 className="text-sm font-medium text-gray-400 uppercase tracking-wider">{title}</h1>
-            <h2 className="text-3xl font-bold text-white mt-2">{value} ILS</h2>
+            <div className="flex flex-col justify-center items-center">
+                <p className="text-sm font-medium text-gray-400 uppercase tracking-wider">({month}/{year})</p>
+                <h1 className="text-sm font-medium text-gray-400 uppercase tracking-wider">{title}</h1>
+                <h2 className="text-3xl font-bold text-white mt-2">{value} ILS</h2>
+            </div>
             {badge && (
                 <span className={`text-white px-2 py-0.5 rounded text-xs font-medium mt-2 bg-${badge.color}-500`}>
                     {badge.text}

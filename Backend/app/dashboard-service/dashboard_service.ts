@@ -10,24 +10,59 @@ import {
   MonthlyCategories,
   MonthlyIncomeExpense,
 } from "./dashboard_models";
-import { MoreThan } from "typeorm";
+import { MoreThanOrEqual } from "typeorm";
 
 class DashboardService {
 
-  private static readonly CACHE_TTL = 7 * 24 * 60 * 60; // 7 days in seconds
+  // TODO: implement logic for fetching recent transactions by days range
+  static async getRecentTransactions(userId: string, days: number) {
+
+    const db = getServiceDatabase('dashboard');
+    const transactionRepo = db.getRepository(DashboardRecentTransaction);
+    const now = new Date();
+    switch(days){
+      case 7:
+        now.setDate(now.getDate() - 7);
+        break;
+      case 30:
+        now.setMonth(now.getMonth() - 1);
+        break;
+      case 90:
+        now.setMonth(now.getMonth() - 3);
+        break;
+      case 180:
+        now.setMonth(now.getMonth() - 6);
+        break;
+    }
+  const startDateString = now.toISOString();
+    const recentTransactions = await transactionRepo.find({
+      select: {
+        date: true,
+        amount: true,
+        type: true,
+        category: true,
+        title: true,
+      },
+      where: { userId , date: MoreThanOrEqual(startDateString) },
+      order: { date: 'DESC' },
+    });
+    return recentTransactions;
+  }
+
+  // Cache time-to-live: 7 days (in seconds)
+  private static readonly CACHE_TTL = 7 * 24 * 60 * 60;
 
   /**
-   * getDashboard
-   * @param userId - The user ID for which to fetch the dashboard
-   * 
-   * What it does:
-   *  - Checks Redis cache first
-   *  - If cache exists, parses and returns it
-   *  - If cache does not exist, fetches from database
-   *  - Populates monthly summaries, category summaries, and recent transactions
-   *  - Stores result in Redis for future requests
-   * 
-   * Returns: Promise<DashboardCache>
+   * Fetch full dashboard data for a user.
+   *
+   * Flow:
+   * 1. Check Redis cache first.
+   * 2. If cache exists → return cached data.
+   * 3. If cache missing → fetch from database.
+   * 4. Store result in Redis.
+   *
+   * @param userId - User ID to fetch dashboard for
+   * @returns DashboardCache
    */
   static async getDashboard(userId: string): Promise<DashboardCache> {
     console.log(`[DASHBOARD] Fetching dashboard for user: ${userId}`);
@@ -35,17 +70,23 @@ class DashboardService {
     try {
       const cacheKey = `dashboard:${userId}`;
 
-      // ------------------ CHECK CACHE ------------------
+      // ---------- STEP 1: CHECK CACHE ----------
       console.log(`[DASHBOARD] Checking Redis cache...`);
       const cachedDashboard = await RedisService.get(cacheKey);
+
       if (cachedDashboard) {
         console.log(`[DASHBOARD] Cache hit. Returning cached dashboard.`);
         return JSON.parse(cachedDashboard) as DashboardCache;
       }
 
+      // ---------- STEP 2: FETCH FROM DATABASE ----------
       console.log(`[DASHBOARD] Cache miss. Fetching data from database...`);
 
-      const dashboardData = await this.fetchAndCacheDashboardData(userId, cacheKey, this.CACHE_TTL);
+      const dashboardData = await this.fetchAndCacheDashboardData(
+        userId,
+        cacheKey,
+        this.CACHE_TTL
+      );
 
       console.log(`[DASHBOARD] Dashboard successfully fetched and cached.`);
       return dashboardData;
@@ -56,10 +97,23 @@ class DashboardService {
     }
   }
 
+  /**
+   * Fetch dashboard data from database and store in Redis cache.
+   *
+   * Fetches:
+   * - Monthly summaries (current year)
+   * - Category summaries (last 13 months)
+   * - Recent transactions (latest 10)
+   *
+   * Then builds dashboard object and caches it.
+   */
+  static async fetchAndCacheDashboardData(
+    userId: string,
+    cacheKey: string,
+    CACHE_TTL: number
+  ) {
 
-  static async fetchAndCacheDashboardData(userId: string, cacheKey: string, CACHE_TTL: number) {
-
-    // ------------------ DATABASE CONNECTION ------------------
+    // ---------- DATABASE SETUP ----------
     const db = getServiceDatabase('dashboard');
     const monthlyRepo = db.getRepository(DashboardMonthlySummary);
     const categoryRepo = db.getRepository(DashboardCategorySummary);
@@ -68,15 +122,15 @@ class DashboardService {
     const now = new Date();
     const currentYear = now.getFullYear();
 
-    // last 6 months for recent transactions
+    // Used for filtering recent data ranges
     const sixMonthsAgo = new Date();
     sixMonthsAgo.setMonth(now.getMonth() - 6);
 
-    // last 13 months for category summaries
     const thirteenMonthsAgo = new Date();
     thirteenMonthsAgo.setMonth(now.getMonth() - 13);
 
-    // ------------------ FETCH DATA ------------------
+    // ---------- FETCH MONTHLY SUMMARIES ----------
+    // Returns income, expense, and balance per month for current year
     console.log(`[DASHBOARD] Fetching monthly summaries for current year...`);
     const monthlySummaries = await monthlyRepo.find({
       select: {
@@ -90,8 +144,10 @@ class DashboardService {
       order: { month: 'DESC', year: 'DESC' },
     });
 
+    // ---------- FETCH CATEGORY SUMMARIES ----------
+    // Uses QueryBuilder to properly filter by month/year range
+    // (ORM find() is not reliable for this type of date logic)
     console.log(`[DASHBOARD] Fetching category summaries for last 13 months...`);
-    // FIX: Use QueryBuilder for proper date range filtering
     const categorySummaries = await categoryRepo
       .createQueryBuilder('cs')
       .select([
@@ -102,20 +158,22 @@ class DashboardService {
       ])
       .where('cs.userId = :userId', { userId })
       .andWhere(
-        '(cs.year > :year OR (cs.year = :year AND cs.month >= :month))', // select only the  
+        // Select records newer than the calculated month/year threshold
+        '(cs.year > :year OR (cs.year = :year AND cs.month >= :month))',
         {
           year: thirteenMonthsAgo.getFullYear(),
-          month: thirteenMonthsAgo.getMonth() + 1 // Convert 0-11 to 1-12
+          month: thirteenMonthsAgo.getMonth() + 1 // convert JS month (0-11) to DB month (1-12)
         }
       )
       .orderBy('cs.year', 'DESC')
       .addOrderBy('cs.month', 'DESC')
       .getMany();
 
-    console.log(`[DASHBOARD] Fetching recent transactions from last 6 months...`);
-    // FIX: Format date properly for string comparison
-    const dateThreshold = sixMonthsAgo.toISOString().split('T')[0]; // YYYY-MM-DD format
+    // ---------- FETCH RECENT TRANSACTIONS ----------
+    // Returns latest 10 transactions sorted by date
+    console.log(`[DASHBOARD] Fetching recent transactions...`);
     const recentTransactions = await transactionRepo.find({
+      take: 10,
       select: {
         date: true,
         amount: true,
@@ -123,36 +181,30 @@ class DashboardService {
         category: true,
         title: true,
       },
-      where: {
-        userId,
-        date: MoreThan(dateThreshold)
-      },
+      where: { userId },
       order: { date: 'DESC' },
     });
 
     console.log(`[DASHBOARD] Recent transactions:`, recentTransactions);
 
-    // ------------------ BUILD DASHBOARD OBJECT ------------------
+    // ---------- BUILD DASHBOARD OBJECT ----------
     const dashboardData: DashboardCache = {
       currentMonthIncomeAndExpense: MonthValidation(monthlySummaries),
       monthlySummary: monthlySummaries,
       categorySummary: organizeCategorySummaries(categorySummaries),
-      recentTransactions: recentTransactions,
+      recentTransactions,
     };
 
-    // ------------------ STORE IN CACHE ------------------
+    // ---------- STORE IN CACHE ----------
     console.log(`[DASHBOARD] Caching dashboard data in Redis...`);
     await RedisService.set(cacheKey, JSON.stringify(dashboardData), CACHE_TTL);
+
     return dashboardData;
   }
 
-
-
-
-
   /**
-   * Invalidate dashboard cache for a user
-   * Should be called when user's transactions are modified
+   * Remove dashboard cache for a user.
+   * Should be called whenever user transactions change.
    */
   static async invalidateCache(userId: string): Promise<void> {
     const cacheKey = `dashboard:${userId}`;
@@ -163,23 +215,30 @@ class DashboardService {
       console.error(`[DASHBOARD] Failed to invalidate cache for user: ${userId}`, error);
     }
   }
-
 }
 
 /**
- * Get current month's income and expense summary
- * Returns actual data if exists, or zero values if not
+ * Returns current month summary.
+ *
+ * If current month exists in DB → return real data.
+ * Otherwise → return default values (zeros).
  */
-function MonthValidation(monthlySummaries: DashboardMonthlySummary[]): MonthlyIncomeExpense {
+function MonthValidation(
+  monthlySummaries: DashboardMonthlySummary[]
+): MonthlyIncomeExpense {
+
   const currentMonth = new Date().getMonth() + 1;
   const currentYear = new Date().getFullYear();
 
-  if (monthlySummaries.length > 0 &&
+  if (
+    monthlySummaries.length > 0 &&
     monthlySummaries[0].month === currentMonth &&
-    monthlySummaries[0].year === currentYear) {
+    monthlySummaries[0].year === currentYear
+  ) {
     return monthlySummaries[0];
   }
 
+  // Default empty values if no data exists for current month
   return {
     month: currentMonth,
     year: currentYear,
@@ -189,28 +248,37 @@ function MonthValidation(monthlySummaries: DashboardMonthlySummary[]): MonthlyIn
   };
 }
 
-function organizeCategorySummaries(categorySummaries: DashboardCategorySummary[]): MonthlyCategories[] {
+/**
+ * Groups category summaries by month and year.
+ * Converts flat DB results into UI-friendly structure.
+ */
+function organizeCategorySummaries(
+  categorySummaries: DashboardCategorySummary[]
+): MonthlyCategories[] {
+
   const map = new Map<string, MonthlyCategories>();
+
   for (const s of categorySummaries) {
-    const key = `${s.month} - ${s.year}`
+    const key = `${s.month} - ${s.year}`;
+
     if (!map.has(key)) {
       map.set(key, {
         month: s.month,
         year: s.year,
         categories: []
-      })
+      });
     }
+
     map.get(key)!.categories.push({
       category: s.category,
       amount: Number(s.amount)
-    })
+    });
   }
+
+  // Sort by newest month first
   return Array.from(map.values()).sort(
     (a, b) => b.year - a.year || b.month - a.month
   );
 }
-
-
-
 
 export default DashboardService;

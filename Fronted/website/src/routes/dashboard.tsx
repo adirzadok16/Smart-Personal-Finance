@@ -1,6 +1,6 @@
 import Navbar from "../Components/Dashboard/Dashboard_Navbar";
 import GeneralData from "../Components/Dashboard/generalData";
-import { Transactionlist } from "../Components/Dashboard/transactionList";
+import { Transactionlist } from "../Components/Dashboard/recentTransactions";
 import ExpenseDistributionChart from "../Components/Dashboard/expenseCategoryChart";
 import IncomeVSExpenseChart from "../Components/Dashboard/IncomeVSExpenseChart";
 import type { DashboardCache } from "../models/dashboard_screen_models";

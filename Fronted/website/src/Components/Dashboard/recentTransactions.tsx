@@ -1,3 +1,4 @@
+import { useNavigate } from "react-router-dom";
 import type { RecentTransaction } from "../../models/dashboard_screen_models";
 
 interface TransactionProps {
@@ -10,18 +11,31 @@ interface TransactionItemProps {
 }
 
 export function Transactionlist({ data }: TransactionProps) {
+    const navigate = useNavigate();
     return (
         <div className="flex flex-col bg-gray-800 border border-gray-700 rounded-2xl shadow-sm p-6 mt-8 w-full max-w-6xl mx-4 mb-10">
             <div className="flex justify-between items-center mb-6">
                 <h1 className="text-xl font-bold text-white">
                     Recent Transactions
                 </h1>
-                <button className="text-sm font-medium text-blue-400 hover:text-blue-300">View All</button>
+                <button
+                    className="text-sm font-medium text-blue-400 hover:text-blue-300"
+                    onClick={() => navigate(
+                        "/transactionsList",
+                        {
+                            state: {
+                                transactions: data,
+                            },
+                        }
+
+                    )}>
+                    View All
+                </button>
             </div>
 
 
             <div className="flex flex-col gap-3 pr-2 max-h-[500px] overflow-y-auto">
-                {data.slice(0, 10).map((transaction) => {
+                {data.map((transaction) => {
                     const formattedDate = new Date(transaction.date).toLocaleDateString("en-US", {
                         year: "numeric",
                         month: "short",
