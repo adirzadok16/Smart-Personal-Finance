@@ -8,7 +8,7 @@ import dotenv from 'dotenv';
 dotenv.config();
 
 class AuthService {
- 
+
   /**
    * login_user
    * @param json - Object containing email and password
@@ -53,7 +53,14 @@ class AuthService {
     console.log("[AUTH] Storing refresh token in Redis...");
     await RedisService.set(`refresh:${isUserExists.id}`, refreshToken, 7 * 24 * 60 * 60); // 7 days
     console.log(`[AUTH] Login successful for user: ${email}`);
-    return { accessToken, refreshToken };
+    return {
+      accessToken: accessToken,
+      refreshToken: refreshToken,
+      first_name: isUserExists.first_name,
+      last_name: isUserExists.last_name,
+      email: isUserExists.email,
+      registration_date: isUserExists.registration_date
+    };
   }
 
   /**
@@ -73,7 +80,7 @@ class AuthService {
     const saltRounds = Number(process.env.SALT_ROUNDS) || 10;
 
     console.log("[AUTH] Creating user instance...");
-    const user : User = {
+    const user: User = {
       first_name: json.firstName,
       last_name: json.lastName,
       email: json.email,

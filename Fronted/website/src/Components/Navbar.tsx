@@ -1,23 +1,28 @@
 import { useState } from "react";
 import { FaUserCircle } from "react-icons/fa";
-import { Link } from "react-router-dom";
+import { Link, useNavigate } from "react-router-dom";
 
-export default function Navbar() {
+interface navbarProps {
+    isDashboard: boolean
+}
+
+export default function Navbar({ isDashboard }: navbarProps) {
     const [open, setOpen] = useState(false);
+    const navigate = useNavigate();
 
     const handleToggle = () => {
         setOpen(!open);
     };
 
     const handleProfile = () => {
-        alert("Profile clicked");
+        navigate("/profile");
     };
 
     const handleLogout = () => {
         alert("Logout clicked");
     };
     return (
-        <nav className="fixed flex justify-between items-center top-0 left-0 right-0 bg-gray-800/95 backdrop-blur shadow-md py-4 z-50 border-b border-gray-700">
+        <nav className="sticky flex justify-between items-center top-0 left-0 right-0 bg-gray-800/95 backdrop-blur shadow-md py-4 z-50 border-b border-gray-700 w-full">
             <div className="flex items-center gap-3 pl-10">
                 <svg
                     xmlns="http://www.w3.org/2000/svg"
@@ -37,12 +42,14 @@ export default function Navbar() {
                 </Link>
             </div>
             <div className="flex items-center gap-4">
-                <div className="flex items-center gap-4 pr-10">
-                    <Link to="/add-transaction" className="flex items-center p-2 text-white bg-blue-400 rounded-full hover:cursor-pointer hover:bg-blue-600 transition-colors"
-                    >
-                        Add Transaction
-                    </Link>
-                </div>
+                {isDashboard && (
+                    <div className="flex items-center gap-4 pr-10">
+                        <Link to="/add-transaction" className="flex items-center p-2 text-white bg-blue-400 rounded-full hover:cursor-pointer hover:bg-blue-600 transition-colors"
+                        >
+                            Add Transaction
+                        </Link>
+                    </div>
+                )}
                 <div className="relative inline-block text-left pr-10">
                     <button
                         onClick={handleToggle}

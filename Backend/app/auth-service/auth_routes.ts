@@ -46,6 +46,12 @@ authRoutes.post('/login', async (req: Request, res: Response) => {
       .status(200)
       .json({
         message: 'Login successful',
+        user: {
+          first_name: result.first_name,
+          last_name: result.last_name,
+          email: result.email,
+          registration_date: result.registration_date
+        }
       });
   } catch (err: any) {
     console.error('Login error:', err);

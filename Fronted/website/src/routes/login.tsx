@@ -2,6 +2,9 @@ import { useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import axios from "axios";
 import Swal from "sweetalert2";
+import { useDispatch } from "react-redux";
+import { setUser } from "../state/store";
+
 
 export default function Login() {
     const navigate = useNavigate();
@@ -9,6 +12,7 @@ export default function Login() {
     const [password, setPassword] = useState("");
     const [loading, setLoading] = useState(false);
     const [error, setError] = useState("");
+    const dispatch = useDispatch();
 
 
 
@@ -32,6 +36,7 @@ export default function Login() {
                 { withCredentials: true } // let axios know to send cookies
             );
             if (response.status === 200) {
+                console.log("response.data from login: ", response.data.user);
                 await Swal.fire({
                     toast: true,
                     position: "bottom-right",
@@ -41,9 +46,15 @@ export default function Login() {
                     timer: 1500,
                     timerProgressBar: true
                 });
+                const user = response.data.user;
+                dispatch(setUser({
+                    firstName: user.first_name,
+                    lastName: user.last_name,
+                    email: user.email,
+                    createdAt: user.registration_date,
+                }));
                 navigate("/dashboard");
             }
-            console.log(response.data);
 
         } catch (err: any) {
             setError(err.response?.data?.message || "Something went wrong");

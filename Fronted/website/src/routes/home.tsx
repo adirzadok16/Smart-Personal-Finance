@@ -87,7 +87,6 @@ export default function Home() {
                 </nav>
             </header>
 
-            <main>
 
                 {/* Home Section */}
                 <section
@@ -291,7 +290,6 @@ export default function Home() {
                     </div>
                 </section>
 
-            </main>
         </div>
     );
 }

@@ -5,6 +5,7 @@ import Home from './routes/home'
 import Dashboard from './routes/dashboard'
 import AddTransaction from './routes/addTranactions'
 import TransactionsList from './routes/transactionsList.tsx'
+import Profile from './routes/profile.tsx'
 
 function App() {
   return (
@@ -16,6 +17,7 @@ function App() {
         <Route path="/dashboard" element={<Dashboard />} />
         <Route path="/add-transaction" element={<AddTransaction />} />
         <Route path="/transactionsList" element={<TransactionsList />} />
+        <Route path="/profile" element={<Profile />} />
       </Routes>
     </ReactRouter>
   )
